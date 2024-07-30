@@ -1,0 +1,29 @@
+# Ignores rds and RData files, large files)
+*.Rds
+*.RData
+*.gz
+*.zip
+*.rds
+.Rhistory
+
+# Ignores shapefiles and rasters
+*.cpg
+*.dbf
+*.prj
+*.shp
+*.shx
+*.nc
+*.tif
+*.tfw
+*.tif.aux.xml
+*.tif.ovr
+*.tif.vat.cpg
+*.tif.vat.dbf
+*.tif.xml
+
+
+# Ignores large rasters
+*.gpkg
+
+
+
