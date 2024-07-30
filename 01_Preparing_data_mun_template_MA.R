@@ -350,27 +350,17 @@ weather_data <- mclapply(1:nrow(centroids), function(i){
   
   wth <- calculating_weather(ex_wt, data_row)
 }
-, mc.cores = 20)
+, mc.cores = 8)
 
 ma_wth <- do.call(rbind, weather_data) 
 
 saveRDS(ma_wth, file = paste0(loc.output, "ma_tiger_spain_climatic_variables_pixel_monthly.rds"))
 
 # Adding Corine Land Covers ---------------------------------------------------
-clc_surface <- readRDS(paste0(loc.output, "clc_all_pixels.rds"))
+clc_surface <- readRDS(paste0(loc.output, "clc_surface_mun.rds"))
 
-ma <- merge(ma_df, clc_surface, by = "pixel_id", all.x = TRUE)
+ma <- merge(ma_wth, clc_surface, by = c("municipality", "id"), all.x = TRUE)
 ma$no_data <- NULL
 
 saveRDS(ma, file = paste0(loc.output, "ma_tiger_spain.rds"))
-
-# # Martas' landcover from raster
-# clc_surface <- readRDS(paste0(loc.data, "df_perc_landcover_EU.Rds"))
-# clc_surface$pixel_id <- as.factor(raster::cellFromXY(template, st_coordinates(clc_surface %>% 
-#                                                                                 st_as_sf(coords = c("lon", "lat"), 
-#                                                                                          remove = FALSE, crs = 4326))))
-# ma <- merge(ma_wth, clc_surface, by = "pixel_id", all.x = TRUE)
-# ma$no_data <- NULL
-# 
-# saveRDS(ma, file = paste0(loc.output, "ma_df_europe.rds"))
 

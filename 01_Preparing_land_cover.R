@@ -14,137 +14,105 @@ library(exactextractr)
 rm(list = ls())
 
 # Directories ------------------------------------------------------------------
+# In local
+loc.output <- paste0(getwd(), "/OUTPUT/")
+loc.data <- paste0(getwd(), "/DATA/")
+loc.era5 <- "/home/catuxa/Documents/Mosquito_Models/EU_Culex/ERA5_Download/"
+loc.clc <- "/home/catuxa/Documents/Mosquito_Models/EU_Culex/DATA/u2018_clc2018_v2020_20u1_raster100m/"
 
-loc.output <- paste0(getwd(), "/EU_Culex/OUTPUT/")
-loc.data <- paste0(getwd(), "/EU_Culex/DATA/")
-
+# In cluster
+loc.output <- paste0(getwd(), "/Spain_Tiger/OUTPUT/")
+loc.data <- paste0(getwd(), "/Spain_Tiger/DATA/")
 loc.era5 <- paste0(getwd(), "/EU_Culex/ERA5_Download/")
+loc.clc <- paste0(getwd(), "/EU_Culex/DATA/u2018_clc2018_v2020_20u1_raster100m/")
 
-# # In local
-# loc.output <- paste0(getwd(), "/OUTPUT/")
-# loc.data <- paste0(getwd(), "/DATA/")
-# 
-# loc.era5 <- paste0(getwd(), "/ERA5_Download/")
 
 sf::sf_use_s2(FALSE)
-# Load raster ------------------------------------------------------------------
+# Calculate clc by municipalities ----------------------------------------------
+# Municipality map
+spain <- readRDS(paste0(loc.output, "spain_mun.rds"))
 
-# Getting a ERA5 template
-pname <- "ERA5_EU_hourly_"
-tmp_temp <- rast(paste0(loc.era5, pname, "2021.nc"), "t2m") 
-template <- tmp_temp[[1]] # Raster to include the mosquito data
-# plot(template)
-# crs(template)
-
-# Alternative: Martas' script --------------------------------------------------
-## from Corine landcover: https://land.copernicus.eu/en/products/corine-land-cover/clc2018/download-by-area
-## Load raster ------------------------------------------------------------------
-path <- paste0(loc.data, "u2018_clc2018_v2020_20u1_raster100m/DATA/U2018_CLC2018_V2020_20u1.tif")
+# clc raster
+path <- paste0(loc.clc, "DATA/U2018_CLC2018_V2020_20u1.tif")
 landcover <- rast(path)
-
-# Little test
-# esp_can <- st_transform(mapSpain::esp_get_prov("Galicia"), crs(landcover))
-# landcover <- crop(landcover, esp_can)
-# template <- crop(template, esp_can)
-# plot(landcover)
-# plot(template)
-
-landcover <- project(landcover, crs(template))
-
+landcover <- project(landcover, crs(spain))
 # plot(landcover) # Plot the raster
 
-df_cat <- levels(landcover)[[1]]
+# loop to calculate clc percentages
 
-## Compute rater percentage for each landcover ---------------------------------
-# Load weather raster template (see above)
-
-# # Filter raster Category
-# rast_cat <- landcover %in% df_cat[1,2]
-# rast_cat <- as.numeric(rast_cat)
-# 
-# # Project and compute sum of areas of small squares.
-# # example in:https://stackoverflow.com/questions/77421977/weighted-sum-in-terraproject-what-are-weights
-# rast_per <- resample(rast_cat, template, method= "sum")
-# 
-# # plot(rast_per)
-
-# Loop through all categories and compute percentage then add as raster layer
-# for(i in c(1:nrow(df_cat))){
-#   print(paste0("i:",i))
-# 
-#   # Filter raster Category
-#   rast_cat <- landcover %in% df_cat[i,2]
-#   rast_cat <- as.numeric(rast_cat)
-# 
-#   # Project and compute sum of areas of small squares.
-#   # example in:https://stackoverflow.com/questions/77421977/weighted-sum-in-terraproject-what-are-weights
-#   rast_aux <- resample(rast_cat, template, method= "sum")
-# 
-#   # plot(it_rast_per)
-#   # I can not save in a raster because it is too large --> save each raster
-#   saveRDS(rast_aux, file = paste0(loc.output, janitor::make_clean_names(df_cat[1,2]), "_rast.rds"))
-#   rm(rast_aux)
-#   # rast_per <- list(rast_per, rast_aux)
-#   # rast_per <- rast(rast_per)
-# }
-
-# Function to process each chunk
-process_chunk <- function(chunk_idx, df_cat, landcover, template, loc.output) {
-  cat("Processing chunk:", df_cat[chunk_idx, 2], "\n")
+results_list <- list()
+for (i in 1:nrow(spain)) {
   
-  # Filter each category
-  rast_cat <- landcover %in% df_cat[chunk_idx, 2]
-  rast_cat <- as.numeric(rast_cat)
+  mun <- spain[i, ]
   
-  # Projection and weighted sum of pixels
-  rast_aux <- terra::resample(rast_cat, template, method= "sum")
-  
-  # Generating file name
-  filename <- paste0(loc.output, make_clean_names(df_cat[chunk_idx, 2]), "_rast.rds")
-  
-  # Verify no empty name
-  if (filename != "") {
-    # Guardar el resultado en un archivo .rds
-    cat("Saving: ", filename, "\n")
-    saveRDS(rast_aux, file = filename)
-  } else {
-    cat("Error: Filename is empty for category", chunk_idx, "\n")
+  if (i %% 100 == 0){
+   cat("row number: ", i, "/n") 
   }
   
-  # Free memory
-  rm(rast_aux)
-  gc()
+  # Crop the raster by each municipality
+  landcover_crop <- crop(landcover, mun)
+  landcover_mask <- mask(landcover_crop, mun)
+  
+  # Calculate the surface of each category
+  freq_table <- as.data.frame(landcover_mask) %>%
+    group_by(LABEL3) %>%
+    summarise(n = n())
+  
+  # Percentage
+  freq_table$per_clc <- (freq_table$n / sum(freq_table$n))
+  
+  # adding municipality
+  freq_table$municipality <- mun$municipality
+  freq_table$id <- mun$id
+  
+  results_list[[i]] <- freq_table
 }
+# saveRDS(results_list, file = paste0(loc.output, "mun_clc_original_list.rds"))
 
-# Total number of rows in df_cat
-n <- nrow(df_cat)
+results_df <- bind_rows(results_list)
 
-# # Number per each chunk
-# chunk_size <- 10
+landcover_crop <- crop(landcover, spain)
+values_id <- levels(landcover_crop)[[1]]
 
-# # Process by chunks
-# for (start_idx in seq(1, n, by = chunk_size)) {
-#   end_idx <- min(start_idx + chunk_size - 1, n)
-#   cat("Number of categories:", end_idx, "\n")
-#   
-#   chunk_indices <- start_idx:end_idx
-#   for (i in chunk_indices) {
-#     process_chunk(i, df_cat, landcover, template, loc.output)
-#   }
-# }
+results_df <- merge(results_df, values_id, by = "LABEL3") 
+results_df <- results_df %>%
+  rename(
+    landcover = "Value",
+    value = "LABEL3"
+  ) %>% mutate(
+    value = as.numeric(value)
+  )
 
-# Process by categories
-for (i in 1:n) {
-  process_chunk(i, df_cat, landcover, template, loc.output)
-}
+clc_surface <- results_df %>%
+  mutate(
+    value = case_when(value == 1 ~ "cont_urban_fabric",
+                      value ==2 ~ "discont_urban_fabric",
+                      value == 4 ~ "roads_rails",
+                      value == 10 ~ "green_urban",
+                      value == 11 ~ "sports_leisure",
+                      value %in% c(3, 5:9) ~ "other_artificial",
+                      value %in% 12:22 ~ "agricultural",
+                      value %in% 23:29 ~ "forests_scrub",
+                      value %in% 30:34 ~ "open",
+                      value %in% 35:36 ~ "inland_wetlands",
+                      value %in% 37:39 ~ "marine_wetlands",
+                      value %in% 40:41 ~ "inland_water",
+                      value %in% 42:44 ~ "marine_water",
+                      value >= 45 ~ "no_data")
+  ) %>%
+  units::drop_units() %>%
+  as.data.table()
 
+clc_surface <- clc_surface %>%
+  group_by(value, municipality, id) %>%
+  summarise(
+    per_clc = sum(per_clc, na.rm = TRUE)
+  ) %>% 
+  pivot_wider(
+    names_from = value,
+    values_from = per_clc
+      )
 
-# Joinning land covers ---------------------------------------------------------
-tiger <- readRDS(paste0(loc.output, "tiger_spain_climatic_variables_pixel_monthly.rds"))
-clc_surface <- readRDS(paste0(loc.output, "clc_all_pixels.rds"))
+clc_surface[is.na(clc_surface)] <- 0
 
-tiger <- merge(tiger, clc_surface, by = "pixel_id", all.x = TRUE)
-tiger$no_data <- NULL
-
-saveRDS(ma, file = paste0(loc.output, "tiger_spain.rds"))
-
+saveRDS(clc_surface, file = paste0(loc.output, "clc_surface_mun.rds"))
