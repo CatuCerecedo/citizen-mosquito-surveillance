@@ -25,5 +25,7 @@
 # Ignores large rasters
 *.gpkg
 
-
+# Ignores cluster files
+*.sh
+*.sh.swp
 
