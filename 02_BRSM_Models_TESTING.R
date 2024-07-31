@@ -386,7 +386,7 @@ loo_compare(loo(mtiger1_occu), loo(mtiger2_occu), loo(mtiger3_occu), loo(mtiger4
 loo(mtiger10_occu)
 
 # Mosquito Alert models --------------------------------------------------------
-ma_df <- readRDS(paste0(loc.output, "ma_df_spain.rds"))
+ma_df <- readRDS(paste0(loc.output, "ma_tiger_spain.rds"))
 
 # these_priors = c(prior(student_t(4, 0, 6), class = "b"))
 mtiger1_ma <- brm(any_reps ~ poly(max_temperature, 2) + 
@@ -406,7 +406,7 @@ mtiger1_ma <- brm(any_reps ~ poly(max_temperature, 2) +
 
 mtiger2_ma <- brm(any_reps ~ poly(mean_temperature, 2) + 
                     mean_relative_humidity + 
-                    (1 | pixel_id) + (1 | year) + offset(log(SE)),
+                    (1 | municipality) + (1 | year) + offset(log(SE)),
                   data = ma_df,
                   prior = set_prior("cauchy(0,2.5)", class="b"),
                   family = bernoulli(link = "logit"),
@@ -435,8 +435,8 @@ mtiger3_ma <- brm(any_reps ~ poly(min_temperature, 2) +
 # saveRDS(mtiger3_ma, file = paste0(loc.output, "mtiger3_ma.rds"))
 
 mtiger4_ma <- brm(any_reps ~ poly(mean_temperature, 2) + mean_relative_humidity + 
-                    agricultural + roads_rails +
-                    (1 | pixel_id) + (1 | year) + offset(log(SE)),
+                    agricultural + green_urban +
+                    (1 | municipality) + (1 | year) + offset(log(SE)),
                   data = ma_df,
                   prior = set_prior("cauchy(0,2.5)", class="b"),
                   family = bernoulli(link = "logit"),
@@ -448,6 +448,21 @@ mtiger4_ma <- brm(any_reps ~ poly(mean_temperature, 2) + mean_relative_humidity 
                   threads = threading(threads_per_chain),
                   control = list(adapt_delta = 0.99))
 # saveRDS(mtiger4_ma, file = paste0(loc.output, "mtiger4_ma.rds"))
+
+mtiger5_ma <- brm(any_reps ~ poly(mean_temperature, 2) + mean_relative_humidity + 
+                    agricultural + cont_urban_fabric +
+                    (1 | id) + (1 | year) + offset(log(SE)),
+                  data = ma_df,
+                  prior = set_prior("cauchy(0,2.5)", class="b"),
+                  family = bernoulli(link = "logit"),
+                  iter = iteret,
+                  warmup = wup,
+                  chains = nchains,
+                  cores = nchains,
+                  backend = "cmdstanr",
+                  threads = threading(threads_per_chain),
+                  control = list(adapt_delta = 0.99))
+# saveRDS(mtiger5_ma, file = paste0(loc.output, "mtiger5_ma.rds"))
 
 loo_compare(loo(mtiger2_ma), loo(mtiger4_ma))
 

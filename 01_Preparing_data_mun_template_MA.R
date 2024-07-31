@@ -21,10 +21,9 @@ loc.era5 <- paste0(getwd(), "/EU_Culex/ERA5_Download/")
 
 sf::sf_use_s2(FALSE)
 # Loading Spain map ------------------------------------------------------------
-# spain <- mapSpain::esp_get_munic_siane() %>% 
+# spain <- mapSpain::esp_get_munic_siane() %>%
 #   st_transform(4326) %>%
 #   filter(!(ine.ccaa.name %in% c("Canarias", "Ceuta", "Melilla"))) %>%
-#   drop_na() %>%
 #   mutate(
 #     id = paste0(codauto, cpro, cmun, LAU_CODE)
 #   ) %>%
@@ -32,9 +31,16 @@ sf::sf_use_s2(FALSE)
 #   dplyr::select(name, id) %>%
 #   rename(municipality = "name")
 # saveRDS(spain, file = paste0(loc.output, "spain_mun.rds"))
+spain <- readRDS(paste0(loc.output, "spain_mun.rds")) %>%
+  mutate(
+    municipality = if_else(is.na(municipality), "no_name", municipality)
+  )
 
-spain <- readRDS(paste0(loc.output, "spain_mun.rds"))
-# plot(st_geometry(spain))
+# Checking all municipalities
+ggplot() +
+  geom_sf(data = spain, fill = "black", color = "transparent",
+          size = 0.01, alpha = 0.8, na.rm = TRUE) 
+
 # Download Sampling effort data -----------------------------------------------
 trs_daily <- data.table::fread("https://github.com/Mosquito-Alert/sampling_effort_data/raw/main/sampling_effort_daily_cellres_025.csv.gz") %>%
   as_tibble() %>%
@@ -363,4 +369,3 @@ ma <- merge(ma_wth, clc_surface, by = c("municipality", "id"), all.x = TRUE)
 ma$no_data <- NULL
 
 saveRDS(ma, file = paste0(loc.output, "ma_tiger_spain.rds"))
-
