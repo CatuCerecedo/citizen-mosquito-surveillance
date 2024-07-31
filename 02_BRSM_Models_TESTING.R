@@ -217,6 +217,22 @@ mtiger10 <- brm(females ~ poly(mean_temperature, 2) + mean_relative_humidity +
                   control = list(adapt_delta = 0.99))
 # saveRDS(mtiger10, file = paste0(loc.output, "mtiger10.rds"))
 
+mtiger11 <- brm(females ~ poly(mean_temperature, 2) + mean_relative_humidity + 
+                  agricultural + cont_urban_fabric +
+                  offset(log(trapping_effort)) + offset(log(n_traps)) +
+                  (1 | id) + (1 | year),
+                data = tiger,
+                prior = set_prior("cauchy(0,2.5)", class="b"),
+                family = negbinomial(link = "log"),
+                iter = iteret,
+                warmup = wup,
+                chains = nchains,
+                cores = nchains,
+                backend = "cmdstanr",
+                threads = threading(threads_per_chain),
+                control = list(adapt_delta = 0.99))
+# saveRDS(mtiger11, file = paste0(loc.output, "mtiger11.rds"))
+
 mtiger1_occu <- brm(occu ~ poly(mean_temperature, 2) + poly(precipitation, 2) + 
                       cont_urban_fabric +
                       log(trapping_effort) + log(n_traps) +

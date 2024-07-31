@@ -21,13 +21,9 @@ loc.data <- paste0(getwd(), "/Spain_Culex/DATA/")
 loc.era5 <- paste0(getwd(), "/Spain_Culex/ERA5_Download/")
 
 sf::sf_use_s2(FALSE)
-# loading ECDC and MA distribution ---------------------------------------------
-# ecdc <- st_read(paste0(loc.data, "status_2303.shp")) %>%
-#   dplyr::select(culex) %>%
-#   filter(culex %in% c("established", "introduced_MA", "introduced_ECDC", "introduced_both", "reported"))
 
 # Checking the daily predictions -----------------------------------------------
-folder = paste0(loc.output, "PREDICTIONS/Counts/")
+folder = paste0(loc.output, "PREDICTIONS/MA_rep/")
 file_list = list.files(folder)
 file_list = file_list[!grepl("_sd", file_list)]
 # file_list = file_list[grepl("_ma.rds", file_list)]
