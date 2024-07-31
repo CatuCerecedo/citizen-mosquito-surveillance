@@ -34,7 +34,11 @@ loc.data <- paste0(getwd(), "/Spain_Tiger/DATA/")
 
 # Loading ----------------------------------------------------------------------
 # Mosquito Alert data
-ma_df <- readRDS(paste0(loc.output, "ma_tiger_spain.rds"))
+ma_df <- readRDS(paste0(loc.output, "ma_tiger_spain.rds")) %>%
+  mutate(
+    id = as.factor(id),
+    year = as.factor(year)
+  )
 
 # Modeling process -------------------------------------------------------------
 nchains = 4
@@ -79,7 +83,7 @@ wup = 2000
 #                      control = list(adapt_delta = 0.99))
 # saveRDS(mtiger12_occu, file = paste0(loc.output, "mtiger12_occu.rds"))
 
-mtiger5_ma <- brm(any_reps ~any_reps ~ poly(mean_temperature, 2) + mean_relative_humidity + 
+mtiger5_ma <- brm(any_reps ~ poly(mean_temperature, 2) + mean_relative_humidity + 
                     agricultural + cont_urban_fabric +
                     (1 | id) + (1 | year) + offset(log(SE)),
                   data = ma_df,
@@ -98,10 +102,9 @@ saveRDS(mtiger5_ma, file = paste0(loc.output, "mtiger5_ma.rds"))
 ma_df <- ma_df %>% 
   filter(n_total_reports > 0) # Si no hay esfuerzo de muestreo el dato no debería de estar.
 
-mtiger2_ma_rep <- brm(any_reps ~ poly(mean_temperature, 2) + 
-                        agricultural + forests_scrub +  
-                        (1 | pixel_id) + (1 | year) + 
-                        offset(log(n_total_reports + 0.0001)),
+mtiger2_ma_rep <- brm(any_reps ~ poly(mean_temperature, 2) + mean_relative_humidity + 
+                        agricultural + cont_urban_fabric +
+                        (1 | id) + (1 | year) +  offset(log(n_total_reports + 0.0001)),
                       data = ma_df,
                       prior = set_prior("cauchy(0,2.5)", class="b"),
                       family = bernoulli(link = "logit"),

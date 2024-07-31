@@ -9,16 +9,16 @@ library(sf)
 rm(list = ls())
 
 # Directories ------------------------------------------------------------------
-# In cluster
-loc.output <- paste0(getwd(), "/Spain_Culex/OUTPUT/")
-loc.data <- paste0(getwd(), "/Spain_Culex/DATA/")
-loc.era5 <- paste0(getwd(), "/Spain_Culex/ERA5_Download/")
-
 # In local
 loc.output <- paste0(getwd(), "/OUTPUT/")
 loc.data <- paste0(getwd(), "/DATA/")
 loc.fig <- paste0(getwd(), "/FIGURES/")
 loc.era5 <- "/home/catuxa/Documents/Mosquito_Models/EU_Culex/ERA5_Download/"
+
+# In cluster
+loc.output <- paste0(getwd(), "/Spain_Culex/OUTPUT/")
+loc.data <- paste0(getwd(), "/Spain_Culex/DATA/")
+loc.era5 <- paste0(getwd(), "/Spain_Culex/ERA5_Download/")
 
 sf::sf_use_s2(FALSE)
 # loading ECDC and MA distribution ---------------------------------------------

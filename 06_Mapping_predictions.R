@@ -36,7 +36,6 @@ ggplot() +
 
 # Loading spain municipality map -----------------------------------------------
 # Country
-spain <- readRDS(paste0(loc.output, "spain_mun.rds"))
 spain <- readRDS(paste0(loc.output, "spain_mun.rds")) %>%
   mutate(
     municipality = if_else(is.na(municipality), "no_name", municipality)
