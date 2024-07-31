@@ -30,7 +30,10 @@ loc.clc <- paste0(getwd(), "/EU_Culex/DATA/u2018_clc2018_v2020_20u1_raster100m/"
 sf::sf_use_s2(FALSE)
 # Calculate clc by municipalities ----------------------------------------------
 # Municipality map
-spain <- readRDS(paste0(loc.output, "spain_mun.rds"))
+spain <- readRDS(paste0(loc.output, "spain_mun.rds")) %>%
+  mutate(
+    municipality = if_else(is.na(municipality), "no_name", municipality)
+  )
 
 # clc raster
 path <- paste0(loc.clc, "DATA/U2018_CLC2018_V2020_20u1.tif")
@@ -39,7 +42,6 @@ landcover <- project(landcover, crs(spain))
 # plot(landcover) # Plot the raster
 
 # loop to calculate clc percentages
-
 results_list <- list()
 for (i in 1:nrow(spain)) {
   

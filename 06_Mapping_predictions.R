@@ -8,17 +8,17 @@ library(tidyterra)
 rm(list = ls())
 
 # Directories ------------------------------------------------------------------
-# In cluster
-loc.output <- paste0(getwd(), "/Spain_Tiger/OUTPUT/")
-loc.data <- paste0(getwd(), "/Spain_Tiger/DATA/")
-loc.figures <- paste0(getwd(), "/Spain_Tiger/FIGURES/")
-loc.era5 <- paste0(getwd(), "/EU_tiger/ERA5_Download/")
-
 # In local
 loc.output <- paste0(getwd(), "/OUTPUT/")
 loc.data <- paste0(getwd(), "/DATA/")
 loc.fig <- paste0(getwd(), "/FIGURES/")
 loc.era5 <- "/home/catuxa/Documents/Mosquito_Models/EU_tiger/ERA5_Download/"
+
+# In cluster
+loc.output <- paste0(getwd(), "/Spain_Tiger/OUTPUT/")
+loc.data <- paste0(getwd(), "/Spain_Tiger/DATA/")
+loc.figures <- paste0(getwd(), "/Spain_Tiger/FIGURES/")
+loc.era5 <- paste0(getwd(), "/EU_tiger/ERA5_Download/")
 
 sf::sf_use_s2(FALSE)
 # Some checks ------------------------------------------------------------------
@@ -37,6 +37,10 @@ ggplot() +
 # Loading spain municipality map -----------------------------------------------
 # Country
 spain <- readRDS(paste0(loc.output, "spain_mun.rds"))
+spain <- readRDS(paste0(loc.output, "spain_mun.rds")) %>%
+  mutate(
+    municipality = if_else(is.na(municipality), "no_name", municipality)
+  )
 
 # Plot preidctions: raster/tif -------------------------------------------------
 

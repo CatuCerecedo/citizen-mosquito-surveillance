@@ -26,7 +26,10 @@ loc.era5 <- paste0(getwd(), "/EU_Culex/ERA5_Download/")
 
 sf::sf_use_s2(FALSE)
 # Obtaining centroids from municipalities --------------------------------------
-spain <- readRDS(paste0(loc.output, "spain_mun.rds"))
+spain <- readRDS(paste0(loc.output, "spain_mun.rds")) %>%
+  mutate(
+    municipality = if_else(is.na(municipality), "no_name", municipality)
+  )
 
 xy <- st_centroid(spain) %>% 
   mutate(
