@@ -42,7 +42,6 @@ xy <- st_centroid(spain) %>%
 # plot(st_geometry(spain))
 # plot(st_geometry(xy["id"]), add = TRUE, fill = "red", size = 2)
 
-
 # Loading CLC data ------------------------------------------------------------- 
 clc_surface <- readRDS(paste0(loc.output, "clc_surface_mun.rds"))
 
@@ -131,10 +130,10 @@ ncores = 10
 new_points <- xy
 
 # Loading model
-model <- readRDS(paste0(loc.output, "mtiger10.rds"))
+model <- readRDS(paste0(loc.output, "mtiger2_ma_rep.rds"))
 
 # Preparing ERA5 folder
-recalculate_variables = TRUE
+recalculate_variables = FALSE
 
 for (y in c("2020", "2021", "2022")){
   # set path and file name
@@ -300,8 +299,8 @@ for (y in c("2020", "2021", "2022")){
       pred_points <- merge(pred_points, pred, by = c("municipality", "id", "lon", "lat"))
       
       print(paste("Saving pred: ", m))
-      saveRDS(pred_points %>% st_drop_geometry(), file = paste0(loc.output, "PREDICTIONS/Counts/",
-                                                                "tiger_", m, "_", y, ".rds"))
+      saveRDS(pred_points %>% st_drop_geometry(), file = paste0(loc.output, "PREDICTIONS/MA_rep/",
+                                                                "tiger_", m, "_", y, "_ma.rds"))
       pred_sd <- bind_rows(mclapply(seq(1, nrow(data_prep_day), chunksize), function(i){
         print(i)
         
@@ -328,8 +327,8 @@ for (y in c("2020", "2021", "2022")){
       
       pred_points_sd <- merge(pred_points_sd, pred_sd, by = c("municipality", "id", "lon", "lat"))
       print(paste("Saving pred sd: ", m))
-      saveRDS(pred_points_sd %>% st_drop_geometry(), file = paste0(loc.output, "PREDICTIONS/Counts/",
-                                                                   "tiger_", m, "_", y, "_sd.rds"))
+      saveRDS(pred_points_sd %>% st_drop_geometry(), file = paste0(loc.output, "PREDICTIONS/MA_rep/",
+                                                                   "tiger_", m, "_", y, "_sd_ma.rds"))
     }
 }
   

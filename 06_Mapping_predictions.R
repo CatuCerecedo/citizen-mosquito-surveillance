@@ -55,7 +55,7 @@ for(y in years){
     print(paste0("Plotting: ", m, "-", y))
     iter <- iter + 1
     
-    pred <- readRDS(paste0(loc.output, "PREDICTIONS/Counts/tiger_", m ,"_", y, ".rds")) %>%
+    pred <- readRDS(paste0(loc.output, "PREDICTIONS/MA/tiger_", m ,"_", y, "_ma.rds")) %>%
       janitor::clean_names() %>%
       st_drop_geometry()
     
@@ -206,10 +206,10 @@ spatial_corr <- vector(mode = "list")
 for(y in years){
   pred_bg_all <- readRDS(paste0(loc.output, "PREDICTIONS/Counts/tiger_", "07" ,"_", y, ".rds")) %>%
     janitor::clean_names() %>%
-    dplyr::select(pixel_id, longitude, latitude, country)
-  pred_ma_all <- readRDS(paste0(loc.output, "PREDICTIONS/MA_rep/tiger_", "07" ,"_", y, "_ma.rds")) %>%
+    dplyr::select(municipality, id, lon, lat)
+  pred_ma_all <- readRDS(paste0(loc.output, "PREDICTIONS/MA/tiger_", "07" ,"_", y, "_ma.rds")) %>%
     janitor::clean_names() %>%
-    dplyr::select(pixel_id, longitude, latitude, country)
+    dplyr::select(municipality, id, lon, lat)
   
   for (m in months){
     print(paste0("Plotting: ", m, "-", y))
@@ -221,16 +221,16 @@ for(y in years){
     # pred_bg <- readRDS(paste0(loc.output, "PREDICTIONS/BG_abundance/Monthly/tiger_", m ,"_", y, ".rds")) %>%
     #   janitor::clean_names() %>%
     #   st_drop_geometry()
-    pred_bg_all <- merge(pred_bg_all, pred_bg, by = c("pixel_id", "longitude", "latitude", "country"))
+    pred_bg_all <- merge(pred_bg_all, pred_bg, by = c("municipality", "id", "lon", "lat"))
     
-    pred_ma <- readRDS(paste0(loc.output, "PREDICTIONS/MA_rep/tiger_", m ,"_", y, "_ma.rds")) %>%
+    pred_ma <- readRDS(paste0(loc.output, "PREDICTIONS/MA/tiger_", m ,"_", y, "_ma.rds")) %>%
       janitor::clean_names() %>%
       st_drop_geometry()
-    pred_ma_all <- merge(pred_ma_all, pred_ma, by = c("pixel_id", "longitude", "latitude", "country"))
+    pred_ma_all <- merge(pred_ma_all, pred_ma, by = c("municipality", "id", "lon", "lat"))
     
     }
-  colnames(pred_bg_all) <- c("pixel_id", "longitude", "latitude", "country", "x03", "x04", "x05", "x06" ,"x07", "x08", "x09", "x10", "x11")
-  colnames(pred_ma_all) <- c("pixel_id", "longitude", "latitude", "country", "x03", "x04", "x05", "x06" ,"x07", "x08", "x09", "x10", "x11")
+  colnames(pred_bg_all) <- c("municipality", "id", "lon", "lat", "x03", "x04", "x05", "x06" ,"x07", "x08", "x09", "x10", "x11")
+  colnames(pred_ma_all) <- c("municipality", "id", "lon", "lat", "x03", "x04", "x05", "x06" ,"x07", "x08", "x09", "x10", "x11")
   
   cor_df <- data.frame()
   for (i in 1:nrow(pred_bg_all)){
@@ -238,10 +238,10 @@ for(y in years){
       print(i)
     }
     cor_row <- data.frame(
-      pixel_id = pred_bg_all[i, 1],
-      longitude = pred_bg_all[i, 2],
-      latitude = pred_bg_all[i, 3],
-      country = pred_bg_all[i, 4],
+      municipality = pred_bg_all[i, 1],
+      id = pred_bg_all[i, 2],
+      lon = pred_bg_all[i, 3],
+      lat = pred_bg_all[i, 4],
       rho = cor(as.numeric(pred_bg_all[i, 5:13]), as.numeric(pred_ma_all[i, 5:13]), method = "spearman"),
       year = y
       )
@@ -251,38 +251,28 @@ for(y in years){
   spatial_corr[[y]] <- cor_df
 }
 
+df <- merge(spatial_corr[["2020"]], spain, by = c("municipality", "id"))
+st_geometry(df) <- "geometry"
 a <- ggplot() +
-  geom_sf(data = spatial_corr[["2021"]] %>% 
-            st_as_sf(coords = c( "longitude", "latitude"), crs = 4326, remove = FALSE), 
-          aes(color = rho), size = 1) +
-  geom_sf(data = country, color = "black", fill = NA,
-          size = 0.5, alpha = 0.5, na.rm = TRUE) +
-  scale_color_distiller("", palette = "Spectral") + 
+  geom_sf(data = df, aes(fill = rho), color = "transparent", size = 1) +
+  scale_fill_distiller("", palette = "Spectral") + 
+  ggtitle("2020") +
+  theme_classic()
+
+df <- merge(spatial_corr[["2021"]], spain, by = c("municipality", "id"))
+st_geometry(df) <- "geometry"
+b <-  ggplot() +
+  geom_sf(data = df, aes(fill = rho), color = "transparent", size = 1) +
+  scale_fill_distiller("", palette = "Spectral") + 
   ggtitle("2021") +
-  xlim(-13, 5) +
-  ylim(34, 44) +
   theme_classic()
-b <- ggplot() +
-  geom_sf(data = spatial_corr[["2022"]] %>% 
-            st_as_sf(coords = c( "longitude", "latitude"), crs = 4326, remove = FALSE), 
-          aes(color = rho), size = 1) +
-  geom_sf(data = country, color = "black", fill = NA,
-          size = 0.5, alpha = 0.5, na.rm = TRUE) +
-  scale_color_distiller("", palette = "Spectral") + 
-  ggtitle("2022") +
-  xlim(-13, 5) +
-  ylim(34, 44) +
-  theme_classic()
+
+df <- merge(spatial_corr[["2022"]], spain, by = c("municipality", "id"))
+st_geometry(df) <- "geometry"
 c <- ggplot() +
-  geom_sf(data = spatial_corr[["2023"]] %>% 
-            st_as_sf(coords = c( "longitude", "latitude"), crs = 4326, remove = FALSE), 
-          aes(color = rho), size = 1) +
-  geom_sf(data = country, color = "black", fill = NA,
-          size = 0.5, alpha = 0.5, na.rm = TRUE) +
-  scale_color_distiller("", palette = "Spectral") + 
-  ggtitle("2023") +
-  xlim(-13, 5) +
-  ylim(34, 44) +
+  geom_sf(data = df, aes(fill = rho), color = "transparent", size = 1) +
+  scale_fill_distiller("", palette = "Spectral") + 
+  ggtitle("2022") +
   theme_classic()
 
 ggpubr::ggarrange(a, b, c,
@@ -291,8 +281,8 @@ ggsave(file = paste0(loc.fig, "spatial_correlation_counts_ma_Spain.png"),
        units = "cm", height = 10, width = 20, bg = "white")
 
 # Plotting temporal correlations -----------------------------------------------
-years <- c("2021", "2022", "2023")
-months <- c("03", "04", "05", "06" ,"07", "08", "09", "10", "11")
+years <- c("2020", "2021", "2022")
+months <- c("01", "02", "03", "04", "05", "06" ,"07", "08", "09", "10", "11", "12")
 
 cor_predictions <- data.frame()
 for(y in years){
@@ -302,22 +292,22 @@ for(y in years){
     pred_bg <- readRDS(paste0(loc.output, "PREDICTIONS/Counts/tiger_", m ,"_", y, ".rds")) %>%
       janitor::clean_names() %>%
       st_drop_geometry()
-    colnames(pred_bg) <- c("pixel_id", "longitude", "latitude", "country", "bg")
-    # pred_bg <- pred_bg %>% filter((pixel_id %in% tiger$pixel_id))
+    colnames(pred_bg) <- c("municipality", "id", "lon", "lat", "bg")
+    pred_bg <- pred_bg %>% filter((pixel_id %in% tiger$pixel_id))
     pred_suit <- readRDS(paste0(loc.output, "PREDICTIONS/Suitability/tiger_", m ,"_", y, "_occu.rds")) %>%
       janitor::clean_names() %>%
-      st_drop_geometry() 
-    colnames(pred_suit) <- c("pixel_id", "longitude", "latitude", "country", "suit")
+      st_drop_geometry()
+    colnames(pred_suit) <- c("municipality", "id", "lon", "lat",  "suit")
     # pred_suit <- pred_suit %>% filter((pixel_id %in% tiger$pixel_id))
-    pred_ma <- readRDS(paste0(loc.output, "PREDICTIONS/MA_rep/tiger_", m ,"_", y, "_ma.rds")) %>%
+    pred_ma <- readRDS(paste0(loc.output, "PREDICTIONS/MA/tiger_", m ,"_", y, "_ma.rds")) %>%
       janitor::clean_names() %>%
       st_drop_geometry()
-    colnames(pred_ma) <- c("pixel_id", "longitude", "latitude", "country", "ma")
+    colnames(pred_ma) <- c("municipality", "id", "lon", "lat",  "ma")
     # pred_ma <- pred_ma %>% filter((pixel_id %in% tiger$pixel_id))
     
     # Joining tables
-    pred <- merge(pred_bg, pred_suit, by = c("pixel_id", "longitude", "latitude", "country"))
-    pred <- merge(pred, pred_ma, by = c("pixel_id", "longitude", "latitude", "country"))
+    pred <- merge(pred_bg, pred_suit, by = c("municipality", "id", "lon", "lat"))
+    pred <- merge(pred, pred_ma, by = c("municipality", "id", "lon", "lat"))
     
     rm(pred_bg, pred_suit, pred_ma)
     
