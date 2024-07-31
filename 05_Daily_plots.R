@@ -27,7 +27,7 @@ sf::sf_use_s2(FALSE)
 #   filter(culex %in% c("established", "introduced_MA", "introduced_ECDC", "introduced_both", "reported"))
 
 # Checking the daily predictions -----------------------------------------------
-folder = paste0(loc.output, "PREDICTIONS/MA/")
+folder = paste0(loc.output, "PREDICTIONS/Counts/")
 file_list = list.files(folder)
 file_list = file_list[!grepl("_sd", file_list)]
 # file_list = file_list[grepl("_ma.rds", file_list)]

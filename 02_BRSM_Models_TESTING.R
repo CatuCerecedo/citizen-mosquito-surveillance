@@ -34,7 +34,7 @@ loc.output <- paste0(getwd(), "/Spain_tiger/OUTPUT/")
 loc.data <- paste0(getwd(), "/Spain_tiger/DATA/")
 
 # Loading ----------------------------------------------------------------------
-tiger <- readRDS(paste0(loc.output, "tiger_spain.rds"))
+tiger <- readRDS(paste0(loc.output, "bg_tiger_spain.rds"))
 # tiger$year <- as.factor(lubridate::year(tiger$end_date))
 
 tiger <- tiger %>% 
@@ -200,6 +200,22 @@ mtiger9 <- brm(females ~ poly(mean_temperature, 2) + poly(precipitation, 2) +
                threads = threading(threads_per_chain),
                control = list(adapt_delta = 0.99))
 # saveRDS(mtiger9, file = paste0(loc.output, "mtiger9.rds"))
+
+mtiger10 <- brm(females ~ poly(mean_temperature, 2) + mean_relative_humidity + 
+                    agricultural + cont_urban_fabric +
+                     log(trapping_effort) + log(n_traps) +
+                    (1 | id) + (1 | year),
+                  data = tiger,
+                  prior = set_prior("cauchy(0,2.5)", class="b"),
+                  family = negbinomial(link = "log"),
+                  iter = iteret,
+                  warmup = wup,
+                  chains = nchains,
+                  cores = nchains,
+                  backend = "cmdstanr",
+                  threads = threading(threads_per_chain),
+                  control = list(adapt_delta = 0.99))
+# saveRDS(mtiger10, file = paste0(loc.output, "mtiger10.rds"))
 
 mtiger1_occu <- brm(occu ~ poly(mean_temperature, 2) + poly(precipitation, 2) + 
                       cont_urban_fabric +

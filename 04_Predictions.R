@@ -131,7 +131,7 @@ ncores = 10
 new_points <- xy
 
 # Loading model
-model <- readRDS(paste0(loc.output, "mtiger5_ma.rds"))
+model <- readRDS(paste0(loc.output, "mtiger10.rds"))
 
 # Preparing ERA5 folder
 recalculate_variables = TRUE
@@ -242,14 +242,14 @@ for (y in c("2020", "2021", "2022")){
         prep_data_day <- merge(prep_data_day, clc_surface,
                                by = c("municipality", "id"), all.x = TRUE)
         
-        saveRDS(prep_data_day, file = paste0(loc.output, "daily_weather_data/prep_ma_predictions_",
+        saveRDS(prep_data_day, file = paste0(loc.output, "daily_weather_data/prep_predictions_",
                                              m, "_", y, ".rds"))
         
         return(prep_data_day)
         
       }, mc.cores = ncores))
     } else {
-      data_prep_day <- readRDS(paste0(loc.output, "daily_weather_data/prep_ma_predictions_",
+      data_prep_day <- readRDS(paste0(loc.output, "daily_weather_data/prep_predictions_",
                                       m, "_", y, ".rds"))
     }
       
@@ -300,8 +300,8 @@ for (y in c("2020", "2021", "2022")){
       pred_points <- merge(pred_points, pred, by = c("municipality", "id", "lon", "lat"))
       
       print(paste("Saving pred: ", m))
-      saveRDS(pred_points %>% st_drop_geometry(), file = paste0(loc.output, "PREDICTIONS/MA/",
-                                                                "tiger_", m, "_", y, "_ma.rds"))
+      saveRDS(pred_points %>% st_drop_geometry(), file = paste0(loc.output, "PREDICTIONS/Counts/",
+                                                                "tiger_", m, "_", y, ".rds"))
       pred_sd <- bind_rows(mclapply(seq(1, nrow(data_prep_day), chunksize), function(i){
         print(i)
         
@@ -328,8 +328,8 @@ for (y in c("2020", "2021", "2022")){
       
       pred_points_sd <- merge(pred_points_sd, pred_sd, by = c("municipality", "id", "lon", "lat"))
       print(paste("Saving pred sd: ", m))
-      saveRDS(pred_points_sd %>% st_drop_geometry(), file = paste0(loc.output, "PREDICTIONS/MA/",
-                                                                   "tiger_", m, "_", y, "_ma_sd.rds"))
+      saveRDS(pred_points_sd %>% st_drop_geometry(), file = paste0(loc.output, "PREDICTIONS/Counts/",
+                                                                   "tiger_", m, "_", y, "_sd.rds"))
     }
 }
   

@@ -23,7 +23,7 @@ loc.era5 <- paste0(getwd(), "/EU_tiger/ERA5_Download/")
 sf::sf_use_s2(FALSE)
 # Some checks ------------------------------------------------------------------
 # Mapping climatic variables
-wthr <- readRDS(paste0(loc.output, "daily_weather_data/prep_ma_predictions_08_2020.rds"))
+wthr <- readRDS(paste0(loc.output, "daily_weather_data/prep_predictions_05_2020.rds"))
 
 prep_data_day <- wthr %>%
   janitor::clean_names() %>%
@@ -55,7 +55,7 @@ for(y in years){
     print(paste0("Plotting: ", m, "-", y))
     iter <- iter + 1
     
-    pred <- readRDS(paste0(loc.output, "PREDICTIONS/MA/tiger_", m ,"_", y, "_ma.rds")) %>%
+    pred <- readRDS(paste0(loc.output, "PREDICTIONS/Counts/tiger_", m ,"_", y, ".rds")) %>%
       janitor::clean_names() %>%
       st_drop_geometry()
     

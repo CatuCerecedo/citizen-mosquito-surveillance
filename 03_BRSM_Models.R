@@ -44,7 +44,7 @@ ma_df <- readRDS(paste0(loc.output, "ma_tiger_spain.rds")) %>%
 nchains = 4
 threads_per_chain = 1
 
-iteret = 4000
+iteret = 5000
 wup = 2000
 
 # NOT RUN
