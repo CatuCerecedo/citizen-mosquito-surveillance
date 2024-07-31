@@ -34,7 +34,7 @@ loc.data <- paste0(getwd(), "/Spain_Tiger/DATA/")
 
 # Loading ----------------------------------------------------------------------
 # Mosquito Alert data
-ma_df <- readRDS(paste0(loc.output, "ma_df_spain.rds"))
+ma_df <- readRDS(paste0(loc.output, "ma_tiger_spain.rds"))
 
 # Modeling process -------------------------------------------------------------
 nchains = 4
