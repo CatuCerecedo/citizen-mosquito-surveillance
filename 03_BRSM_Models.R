@@ -70,7 +70,7 @@ wup = 2000
 # Sys.setenv(PATH = "C:/Users/Catu/Documents/.cmdstan/cmdstan-2.31.0/stan/lib/stan_math/lib/tbb")
 
 mtiger5 <- brm(females ~ poly(mean_temperature, 2) + precipitation + 
-                 agricultural + green_urban +
+                 agricultural + 
                  offset(log(trapping_effort)) + offset(log(n_traps)) +
                  (1 | prov_name) + (1 | year),
                data = tiger,
@@ -85,7 +85,7 @@ mtiger5 <- brm(females ~ poly(mean_temperature, 2) + precipitation +
 saveRDS(mtiger5, file = paste0(loc.output, "mtiger5.rds"))
 
 mtiger1_occu <- brm(occu ~ poly(mean_temperature, 2) + precipitation + 
-                      agricultural + green_urban +
+                      agricultural + 
                       offset(log(trapping_effort)) + offset(log(n_traps)) +
                       (1 | prov_name) + (1 | year),
                     data = tiger,
@@ -101,7 +101,7 @@ mtiger1_occu <- brm(occu ~ poly(mean_temperature, 2) + precipitation +
 saveRDS(mtiger1_occu, file = paste0(loc.output, "mtiger1_occu.rds"))
 
 mtiger5_ma <- brm(any_reps ~ poly(mean_temperature, 2) + precipitation + 
-                    agricultural + green_urban +
+                    agricultural + 
                     (1 | prov_name) + (1 | year) + offset(log(SE)),
                   data = ma_df,
                   prior = set_prior("cauchy(0,2.5)", class="b"),
