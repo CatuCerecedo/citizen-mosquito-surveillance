@@ -39,7 +39,7 @@ tiger <- readRDS(paste0(loc.output, "bg_tiger_spain.rds"))
 
 tiger <- tiger %>% 
   mutate(
-    urban = discont_urban_fabric + sports_leisure + green_urban + cont_urban_fabric,
+    urban = discont_urban_fabric + sports_leisure + cont_urban_fabric,
     occu = case_when(
       females > 0 ~ 1,
       TRUE ~ 0),
@@ -66,7 +66,7 @@ wup = 200
 mtiger1 <- brm(females ~ poly(mean_temperature, 2) +
                  agricultural + forests_scrub +
                  offset(log(trapping_effort)) + offset(log(n_traps)) +
-                 (1 | pixel_id) + (1 | y),
+                 (1 | id) + (1 | year),
   data = tiger,
   prior = set_prior("cauchy(0,2.5)", class="b"),
   family = negbinomial(link = "log"),
@@ -81,7 +81,7 @@ mtiger1 <- brm(females ~ poly(mean_temperature, 2) +
 mtiger2 <- brm(females ~ poly(mean_temperature, 2) + precipitation +
                  agricultural + forests_scrub + discont_urban_fabric + roads_rails +
                  offset(log(trapping_effort)) + offset(log(n_traps)) +
-                 (1 | pixel_id) + (1 | y),
+                 (1 | id) + (1 | year),
                data = tiger,
                prior = set_prior("cauchy(0,2.5)", class="b"),
                family = negbinomial(link = "log"),
@@ -95,8 +95,8 @@ mtiger2 <- brm(females ~ poly(mean_temperature, 2) + precipitation +
 
 mtiger3 <- brm(females ~ poly(mean_temperature, 2) + precipitation + wind_speed +
                  cont_urban_fabric +
-                 log(trapping_effort) + log(n_traps) +
-                 (1 | pixel_id) + (1 | y),
+                 offset(log(trapping_effort)) + offset(log(n_traps)) +
+                 (1 | id) + (1 | year),
                  data = tiger,
                  prior = set_prior("cauchy(0,2.5)", class="b"),
                  family = negbinomial(link = "log"),
@@ -110,8 +110,8 @@ mtiger3 <- brm(females ~ poly(mean_temperature, 2) + precipitation + wind_speed 
 
 mtiger4 <- brm(females ~ poly(mean_temperature, 2) + precipitation + 
                 cont_urban_fabric +
-                log(trapping_effort) + log(n_traps) +
-                (1 | pixel_id) + (1 | y),
+                offset(log(trapping_effort)) + offset(log(n_traps)) +
+                 (1 | id) + (1 | year),
                data = tiger,
                prior = set_prior("cauchy(0,2.5)", class="b"),
                family = negbinomial(link = "log"),
@@ -125,8 +125,8 @@ mtiger4 <- brm(females ~ poly(mean_temperature, 2) + precipitation +
 
 mtiger5 <- brm(females ~ poly(mean_temperature, 2) + precipitation + 
                  roads_rails + green_urban +
-                log(trapping_effort) + log(n_traps) +
-                (1 | pixel_id) + (1 | y),
+                 offset(log(trapping_effort)) + offset(log(n_traps)) +
+                 (1 | id) + (1 | year),
                data = tiger,
                prior = set_prior("cauchy(0,2.5)", class="b"),
                family = negbinomial(link = "log"),
@@ -142,7 +142,7 @@ mtiger6 <- brm(females ~ discont_urban_fabric + agricultural + forests_scrub + o
                  inland_wetlands + inland_water + other_artificial + sports_leisure +
                  marine_water + roads_rails + cont_urban_fabric + marine_wetlands + green_urban +
                  offset(log(trapping_effort)) + offset(log(n_traps)) +
-                 (1 | pixel_id) + (1 | y),
+                 (1 | id) + (1 | year),
                data = tiger,
                prior = set_prior("cauchy(0,2.5)", class="b"),
                family = negbinomial(link = "log"),
@@ -157,8 +157,8 @@ mtiger6 <- brm(females ~ discont_urban_fabric + agricultural + forests_scrub + o
 mtiger7 <- brm(females ~ poly(min_temperature, 2) +
                  precipitation +
                  urban +
-                 log(trapping_effort) + log(n_traps) +
-                 (1 | pixel_id) + (1 | y),
+                 offset(log(trapping_effort)) + offset(log(n_traps)) +
+                 (1 | id) + (1 | year),
               data = tiger,
               prior = set_prior("cauchy(0,2.5)", class="b"),
               family = negbinomial(link = "log"),
@@ -172,8 +172,8 @@ mtiger7 <- brm(females ~ poly(min_temperature, 2) +
 
 mtiger8 <- brm(females ~ poly(mean_temperature, 2) + precipitation + 
                  cont_urban_fabric + discont_urban_fabric + sports_leisure + green_urban +
-                 log(trapping_effort) + log(n_traps) +
-                 (1 | pixel_id) + (1 | y),
+                 offset(log(trapping_effort)) + offset(log(n_traps)) +
+                 (1 | id) + (1 | year),
                data = tiger,
                prior = set_prior("cauchy(0,2.5)", class="b"),
                family = negbinomial(link = "log"),
@@ -188,8 +188,8 @@ mtiger8 <- brm(females ~ poly(mean_temperature, 2) + precipitation +
 
 mtiger9 <- brm(females ~ poly(mean_temperature, 2) + poly(precipitation, 2) + 
                 cont_urban_fabric +
-                log(trapping_effort) + log(n_traps) +
-                (1 | pixel_id) + (1 | y),
+                 offset(log(trapping_effort)) + offset(log(n_traps)) +
+                 (1 | id) + (1 | year),
                data = tiger,
                prior = set_prior("cauchy(0,2.5)", class="b"),
                family = negbinomial(link = "log"),
@@ -203,8 +203,8 @@ mtiger9 <- brm(females ~ poly(mean_temperature, 2) + poly(precipitation, 2) +
 
 mtiger10 <- brm(females ~ poly(mean_temperature, 2) + mean_relative_humidity + 
                     agricultural + cont_urban_fabric +
-                     log(trapping_effort) + log(n_traps) +
-                    (1 | id) + (1 | year),
+                    offset(log(trapping_effort)) + offset(log(n_traps)) +
+                  (1 | id) + (1 | year),
                   data = tiger,
                   prior = set_prior("cauchy(0,2.5)", class="b"),
                   family = negbinomial(link = "log"),
@@ -233,10 +233,54 @@ mtiger11 <- brm(females ~ poly(mean_temperature, 2) + mean_relative_humidity +
                 control = list(adapt_delta = 0.99))
 # saveRDS(mtiger11, file = paste0(loc.output, "mtiger11.rds"))
 
-mtiger1_occu <- brm(occu ~ poly(mean_temperature, 2) + poly(precipitation, 2) + 
-                      cont_urban_fabric +
-                      log(trapping_effort) + log(n_traps) +
-                      (1 | pixel_id) + (1 | y),
+mtiger12 <- brm(females ~ poly(mean_temperature, 2) + precipitation + 
+                 offset(log(trapping_effort)) + offset(log(n_traps)) +
+                 (1 | id) + (1 | year),
+               data = tiger,
+               prior = set_prior("cauchy(0,2.5)", class="b"),
+               family = negbinomial(link = "log"),
+               iter = iteret,
+               chains = nchains,
+               cores = nchains,
+               backend = "cmdstanr",
+               threads = threading(threads_per_chain),
+               control = list(adapt_delta = 0.99))
+# saveRDS(mtiger12, file = paste0(loc.output, "mtiger12.rds"))
+
+mtiger13 <- brm(females ~ poly(mean_temperature, 2) + precipitation + 
+                 urban + 
+                 offset(log(trapping_effort)) + offset(log(n_traps)) +
+                 (1 | id) + (1 | year),
+               data = tiger,
+               prior = set_prior("cauchy(0,2.5)", class="b"),
+               family = negbinomial(link = "log"),
+               iter = iteret,
+               chains = nchains,
+               cores = nchains,
+               backend = "cmdstanr",
+               threads = threading(threads_per_chain),
+               control = list(adapt_delta = 0.99))
+# saveRDS(mtiger13, file = paste0(loc.output, "mtiger13.rds"))
+
+mtiger14 <- brm(females ~ poly(mean_temperature, 2) + precipitation + 
+                  urban + green_urban + roads_rails +
+                  offset(log(trapping_effort)) + offset(log(n_traps)) +
+                  (1 | id) + (1 | year),
+                data = tiger,
+                prior = set_prior("cauchy(0,2.5)", class="b"),
+                family = negbinomial(link = "log"),
+                iter = iteret,
+                chains = nchains,
+                cores = nchains,
+                backend = "cmdstanr",
+                threads = threading(threads_per_chain),
+                control = list(adapt_delta = 0.99))
+# saveRDS(mtiger14, file = paste0(loc.output, "mtiger14.rds"))
+
+mtiger1_occu <- brm(occu ~ poly(mean_temperature, 2) + precipitation + 
+                       roads_rails + green_urban +
+                       offset(log(trapping_effort)) + offset(log(n_traps)) +
+                       (1 | id) + (1 | year),
                   data = tiger,
                   prior = set_prior("cauchy(0,2.5)", class="b"),
                   family = bernoulli(link = "logit"),
@@ -249,11 +293,10 @@ mtiger1_occu <- brm(occu ~ poly(mean_temperature, 2) + poly(precipitation, 2) +
                   control = list(adapt_delta = 0.99))
 # saveRDS(mtiger1_occu, file = paste0(loc.output, "mtiger1_occu.rds"))
 
-mtiger2_occu <- brm(occu ~ poly(min_temperature, 2) +
-                      mean_relative_humidity + 
+mtiger2_occu <- brm(occu ~  poly(mean_temperature, 2) + precipitation + 
                       agricultural + forests_scrub + discont_urban_fabric +
                       offset(log(trapping_effort)) + offset(log(n_traps)) +
-                      (1 | pixel_id) + (1 | year),
+                      (1 | id) + (1 | year),
                     data = tiger,
                     prior = set_prior("cauchy(0,2.5)", class="b"),
                     family = bernoulli(link = "logit"),
@@ -266,10 +309,10 @@ mtiger2_occu <- brm(occu ~ poly(min_temperature, 2) +
                     control = list(adapt_delta = 0.99))
 # saveRDS(mtiger2_occu, file = paste0(loc.output, "mtiger2_occu.rds"))
 
-mtiger3_occu <- brm(occu ~ poly(min_temperature, 2) +
-                      agricultural + forests_scrub + 
+mtiger3_occu <- brm(occu ~  poly(mean_temperature, 2) + precipitation + 
+                      green_urban + urban +
                       offset(log(trapping_effort)) + offset(log(n_traps)) +
-                      (1 | pixel_id) + (1 | year),
+                      (1 | id) + (1 | year),
                     data = tiger,
                     prior = set_prior("cauchy(0,2.5)", class="b"),
                     family = bernoulli(link = "logit"),
@@ -282,10 +325,10 @@ mtiger3_occu <- brm(occu ~ poly(min_temperature, 2) +
                     control = list(adapt_delta = 0.99))
 # saveRDS(mtiger3_occu, file = paste0(loc.output, "mtiger3_occu.rds"))
 
-mtiger4_occu <- brm(occu ~ poly(mean_temperature, 2) +
-                      agricultural + forests_scrub + 
+mtiger4_occu <- brm(occu ~  poly(mean_temperature, 2) + precipitation + 
+                      forests_scrub + agricultural +
                       offset(log(trapping_effort)) + offset(log(n_traps)) +
-                      (1 | pixel_id) + (1 | year),
+                      (1 | id) + (1 | year),
                     data = tiger,
                     prior = set_prior("cauchy(0,2.5)", class="b"),
                     family = bernoulli(link = "logit"),
@@ -298,127 +341,14 @@ mtiger4_occu <- brm(occu ~ poly(mean_temperature, 2) +
                     control = list(adapt_delta = 0.99))
 # saveRDS(mtiger4_occu, file = paste0(loc.output, "mtiger4_occu.rds"))
 
-mtiger5_occu <- brm(occu ~ poly(min_temperature, 2) + precipitation +
-                      agricultural + forests_scrub + 
-                      offset(log(trapping_effort)) + offset(log(n_traps)) +
-                      (1 | pixel_id) + (1 | year),
-                    data = tiger,
-                    prior = set_prior("cauchy(0,2.5)", class="b"),
-                    family = bernoulli(link = "logit"),
-                    iter = iteret,
-                    warmup = wup,
-                    chains = nchains,
-                    cores = nchains,
-                    backend = "cmdstanr",
-                    threads = threading(threads_per_chain),
-                    control = list(adapt_delta = 0.99))
-# saveRDS(mtiger5_occu, file = paste0(loc.output, "mtiger5_occu.rds"))
-
-mtiger6_occu <- brm(occu ~ poly(min_temperature, 2) + mean_relative_humidity +
-                      agricultural + 
-                      offset(log(trapping_effort)) + offset(log(n_traps)) +
-                      (1 | pixel_id) + (1 | year),
-                    data = tiger,
-                    prior = set_prior("cauchy(0,2.5)", class="b"),
-                    family = bernoulli(link = "logit"),
-                    iter = iteret,
-                    warmup = wup,
-                    chains = nchains,
-                    cores = nchains,
-                    backend = "cmdstanr",
-                    threads = threading(threads_per_chain),
-                    control = list(adapt_delta = 0.99))
-# saveRDS(mtiger6_occu, file = paste0(loc.output, "mtiger6_occu.rds"))
-
-mtiger7_occu <- brm(occu ~ poly(min_temperature, 2) + mean_relative_humidity +
-                      agricultural + 
-                      offset(log(trapping_effort)) + offset(log(n_traps)) +
-                      (1 | pixel_id) + (1 | year),
-                    data = tiger,
-                    prior = set_prior("cauchy(0,2.5)", class="b"),
-                    family = bernoulli(link = "logit"),
-                    iter = iteret,
-                    warmup = wup,
-                    chains = nchains,
-                    cores = nchains,
-                    backend = "cmdstanr",
-                    threads = threading(threads_per_chain),
-                    control = list(adapt_delta = 0.99))
-# saveRDS(mtiger7_occu, file = paste0(loc.output, "mtiger7_occu.rds"))
-
-mtiger8_occu <- brm(occu ~ poly(mean_temperature, 2) +
-                      mean_relative_humidity + 
-                      agricultural + forests_scrub + discont_urban_fabric +
-                      log(trapping_effort) + log(n_traps) +
-                      (1 | pixel_id) + (1 | year),
-                    data = tiger,
-                    prior = set_prior("cauchy(0,2.5)", class="b"),
-                    family = bernoulli(link = "logit"),
-                    iter = iteret,
-                    warmup = wup,
-                    chains = nchains,
-                    cores = nchains,
-                    backend = "cmdstanr",
-                    threads = threading(threads_per_chain),
-                    control = list(adapt_delta = 0.99))
-# saveRDS(mtiger8_occu, file = paste0(loc.output, "mtiger8_occu.rds"))
-
-mtiger9_occu <- brm(occu ~ poly(mean_temperature, 2) +
-                      mean_relative_humidity + 
-                      agricultural + forests_scrub + 
-                      log(trapping_effort) + log(n_traps) +
-                      (1 | pixel_id) + (1 | year),
-                    data = tiger,
-                    prior = set_prior("cauchy(0,2.5)", class="b"),
-                    family = bernoulli(link = "logit"),
-                    iter = iteret,
-                    warmup = wup,
-                    chains = nchains,
-                    cores = nchains,
-                    backend = "cmdstanr",
-                    threads = threading(threads_per_chain),
-                    control = list(adapt_delta = 0.99))
-# saveRDS(mtiger9_occu, file = paste0(loc.output, "mtiger9_occu.rds"))
-
-mtiger10_occu <- brm(occu ~ poly(mean_temperature, 2) +
-                       agricultural + forests_scrub + 
-                       log(trapping_effort) + log(n_traps) +
-                       (1 | pixel_id) + (1 | year),
-                     data = tiger,
-                     prior = set_prior("cauchy(0,2.5)", class="b"),
-                     family = bernoulli(link = "logit"),
-                     iter = iteret,
-                     warmup = wup,
-                     chains = nchains,
-                     cores = nchains,
-                     backend = "cmdstanr",
-                     threads = threading(threads_per_chain),
-                     control = list(adapt_delta = 0.99))
-# saveRDS(mtiger10_occu, file = paste0(loc.output, "mtiger10_occu.rds"))
-
-mtiger11_occu <- brm(occu ~ poly(mean_temperature, 2) +
-                      agricultural + forests_scrub + discont_urban_fabric +
-                      log(trapping_effort) + log(n_traps) +
-                      (1 | pixel_id) + (1 | year),
-                    data = tiger,
-                    prior = set_prior("cauchy(0,2.5)", class="b"),
-                    family = bernoulli(link = "logit"),
-                    iter = iteret,
-                    warmup = wup,
-                    chains = nchains,
-                    cores = nchains,
-                    backend = "cmdstanr",
-                    threads = threading(threads_per_chain),
-                    control = list(adapt_delta = 0.99))
-# saveRDS(mtiger11_occu, file = paste0(loc.output, "mtiger11_occu.rds"))
-
 loo_compare(loo(mtiger1_occu), loo(mtiger2_occu), loo(mtiger3_occu), loo(mtiger4_occu), 
             loo(mtiger5_occu), loo(mtiger6_occu), loo(mtiger7_occu), loo(mtiger8_occu), 
             loo(mtiger9_occu), loo(mtiger10_occu), loo(mtiger11_occu))
 loo(mtiger10_occu)
 
 # Mosquito Alert models --------------------------------------------------------
-ma_df <- readRDS(paste0(loc.output, "ma_tiger_spain.rds"))
+ma_df <- readRDS(paste0(loc.output, "ma_tiger_spain.rds")) %>%
+  filter(n_total_reports > 0)
 
 # these_priors = c(prior(student_t(4, 0, 6), class = "b"))
 mtiger1_ma <- brm(any_reps ~ poly(max_temperature, 2) + 
@@ -481,7 +411,7 @@ mtiger4_ma <- brm(any_reps ~ poly(mean_temperature, 2) + mean_relative_humidity 
                   control = list(adapt_delta = 0.99))
 # saveRDS(mtiger4_ma, file = paste0(loc.output, "mtiger4_ma.rds"))
 
-mtiger5_ma <- brm(any_reps ~ poly(mean_temperature, 2) + mean_relative_humidity + 
+mtiger5_ma <- brm(any_reps ~ poly(mean_temperature, 2) + precipitation + 
                     agricultural + cont_urban_fabric +
                     (1 | id) + (1 | year) + offset(log(SE)),
                   data = ma_df,
@@ -503,7 +433,7 @@ ma_df <- ma_df %>%
   filter(n_total_reports > 0) # Si no hay esfuerzo de muestreo el dato no debería de estar.
 
 mtiger1_ma_rep <- brm(any_reps ~ poly(mean_temperature, 2) + 
-                        mean_relative_humidity + 
+                        precipitation + 
                         (1 | pixel_id) + (1 | year) + offset(log(n_total_reports)),
                       data = ma_df,
                       prior = set_prior("cauchy(0,2.5)", class="b"),
