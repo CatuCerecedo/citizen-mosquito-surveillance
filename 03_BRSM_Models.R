@@ -82,7 +82,7 @@ mtiger5 <- brm(females ~ poly(mean_temperature, 2) + precipitation +
                backend = "cmdstanr",
                threads = threading(threads_per_chain),
                control = list(adapt_delta = 0.99))
-saveRDS(mtiger10, file = paste0(loc.output, "mtiger10.rds"))
+saveRDS(mtiger5, file = paste0(loc.output, "mtiger5.rds"))
 
 mtiger1_occu <- brm(occu ~ poly(mean_temperature, 2) + precipitation + 
                       agricultural + green_urban +
