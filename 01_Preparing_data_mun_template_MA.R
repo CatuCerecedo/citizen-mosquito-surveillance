@@ -28,8 +28,8 @@ sf::sf_use_s2(FALSE)
 #     id = paste0(codauto, cpro, cmun, LAU_CODE)
 #   ) %>%
 #   ungroup() %>%
-#   dplyr::select(name, id) %>%
-#   rename(municipality = "name")
+#   dplyr::select(name, id, ine.prov.name) %>%
+#   rename(municipality = "name", prov_name = "ine.prov.name")
 # saveRDS(spain, file = paste0(loc.output, "spain_mun.rds"))
 spain <- readRDS(paste0(loc.output, "spain_mun.rds")) %>%
   mutate(

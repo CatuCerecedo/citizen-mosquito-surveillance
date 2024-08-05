@@ -72,7 +72,7 @@ wup = 2000
 mtiger5 <- brm(females ~ poly(mean_temperature, 2) + precipitation + 
                  agricultural + green_urban +
                  offset(log(trapping_effort)) + offset(log(n_traps)) +
-                 (1 | id) + (1 | year),
+                 (1 | prov_name) + (1 | year),
                data = tiger,
                prior = set_prior("cauchy(0,2.5)", class="b"),
                family = negbinomial(link = "log"),
@@ -87,7 +87,7 @@ saveRDS(mtiger5, file = paste0(loc.output, "mtiger5.rds"))
 mtiger1_occu <- brm(occu ~ poly(mean_temperature, 2) + precipitation + 
                       agricultural + green_urban +
                       offset(log(trapping_effort)) + offset(log(n_traps)) +
-                      (1 | id) + (1 | year),
+                      (1 | prov_name) + (1 | year),
                     data = tiger,
                     prior = set_prior("cauchy(0,2.5)", class="b"),
                     family = bernoulli(link = "logit"),
@@ -102,7 +102,7 @@ saveRDS(mtiger1_occu, file = paste0(loc.output, "mtiger1_occu.rds"))
 
 mtiger5_ma <- brm(any_reps ~ poly(mean_temperature, 2) + precipitation + 
                     agricultural + green_urban +
-                    (1 | id) + (1 | year) + offset(log(SE)),
+                    (1 | prov_name) + (1 | year) + offset(log(SE)),
                   data = ma_df,
                   prior = set_prior("cauchy(0,2.5)", class="b"),
                   family = bernoulli(link = "logit"),
@@ -121,7 +121,7 @@ ma_df <- ma_df %>%
 
 mtiger2_ma_rep <- brm(any_reps ~ poly(mean_temperature, 2) + precipitation + 
                         agricultural + green_urban +
-                        (1 | id) + (1 | year) +  offset(log(n_total_reports + 0.0001)),
+                        (1 | prov_name) + (1 | year) +  offset(log(n_total_reports + 0.0001)),
                       data = ma_df,
                       prior = set_prior("cauchy(0,2.5)", class="b"),
                       family = bernoulli(link = "logit"),
