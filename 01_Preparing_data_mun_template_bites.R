@@ -8,15 +8,15 @@ library(readxl)
 
 rm(list = ls())
 # Directories ------------------------------------------------------------------
+# # In local
+loc.output <- paste0(getwd(), "/OUTPUT/")
+loc.data <- paste0(getwd(), "/DATA/")
+loc.era5 <- "/home/catuxa/Documents/Mosquito_Models/EU_Culex/ERA5_Download/"
+
 # In cluster
 loc.output <- paste0(getwd(), "/Spain_Tiger/OUTPUT/")
 loc.data <- paste0(getwd(), "/Spain_Tiger/DATA/")
 loc.era5 <- paste0(getwd(), "/EU_Culex/ERA5_Download/")
-
-# # In local
-# loc.output <- paste0(getwd(), "/OUTPUT/")
-# loc.data <- paste0(getwd(), "/DATA/")
-# loc.era5 <- "/home/catuxa/Documents/Mosquito_Models/EU_Culex/ERA5_Download/"
 
 sf::sf_use_s2(FALSE)
 # Loading Spain map ------------------------------------------------------------
@@ -133,7 +133,9 @@ bites_df <- st_centroid(bites_df) %>%
 # source("/home/usuaris/ccerecedo/EU_Culex/read_and_extract_grib_data.R")
 
 # In local
-# source("read_and_extract_nc_data_daily_for_bites.R")
+source("read_and_extract_nc_data_daily_for_bites.R")
+
+# In cluster
 source("Spain_Tiger/read_and_extract_nc_data_daily_for_bites.R")
 
 bites_df <- bites_df %>%
@@ -147,21 +149,21 @@ bites_df <- bites_df %>%
 cat("------------------------- Number of rows:", nrow(bites_df), "\n")
 bites_df_1 <- bites_df[1:1371, ]
 bites_df_2 <- bites_df[1372:nrow(bites_df), ]
-weather_data <- mclapply(1:nrow(bites_df_2), function(i){
+weather_data <- mclapply(1:nrow(bites_df_1), function(i){
   
   cat(paste0("Number row:", i, "\n"))
   
-  data_row <- bites_df_2[i, ]
+  data_row <- bites_df_1[i, ]
   
   ex_wt <- extract_weather(data_row)
   
   wth <- calculating_weather(ex_wt)
 }
-, mc.cores = 10)
+, mc.cores = 1)
 
 bites_wth <- do.call(rbind, weather_data) 
 
-saveRDS(ma_wth, file = paste0(loc.output, "bites_spain_climatic_variables_pixel_daily.rds"))
+saveRDS(bites_wth, file = paste0(loc.output, "bites_spain_climatic_variables_pixel_daily.rds"))
 
 # Adding Corine Land Covers ---------------------------------------------------
 clc_surface <- readRDS(paste0(loc.output, "clc_surface_mun_level_0.rds"))
