@@ -13,11 +13,12 @@ rm(list = ls())
 # In cluster
 loc.output <- paste0(getwd(), "/Spain_Tiger/OUTPUT/")
 loc.data <- paste0(getwd(), "/Spain_Tiger/DATA/")
+loc.era5 <- paste0(getwd(), "/EU_Culex/ERA5_Download/")
 
-# In local
-loc.output <- paste0(getwd(), "/OUTPUT/")
-loc.data <- paste0(getwd(), "/DATA/")
-loc.era5 <- "/home/catuxa/Documents/Mosquito_Models/EU_Culex/ERA5_Download/"
+# # In local
+# loc.output <- paste0(getwd(), "/OUTPUT/")
+# loc.data <- paste0(getwd(), "/DATA/")
+# loc.era5 <- "/home/catuxa/Documents/Mosquito_Models/EU_Culex/ERA5_Download/"
 
 sf::sf_use_s2(FALSE)
 # Loading Spain map ------------------------------------------------------------
