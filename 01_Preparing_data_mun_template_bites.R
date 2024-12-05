@@ -158,7 +158,7 @@ weather_data <- mclapply(1:nrow(bites_df_2), function(i){
   
   wth <- calculating_weather(ex_wt)
 }
-, mc.cores = 1)
+, mc.cores = 10)
 
 bites_wth <- do.call(rbind, weather_data) 
 
