@@ -15,7 +15,7 @@ library(brms)
 library(shinystan)
 library(loo)
 library(cmdstanr)
-set_cmdstan_path("/home/usuaris/ccerecedo/cmdstan")
+# set_cmdstan_path("/home/usuaris/ccerecedo/cmdstan")
 
 check_cmdstan_toolchain()
 cmdstan_version()
@@ -24,22 +24,24 @@ cmdstan_version()
 
 rm(list = ls())
 # Directories ------------------------------------------------------------------
-# In local
-loc.output <- paste0(getwd(), "/OUTPUT/")
-loc.data <- paste0(getwd(), "/DATA/")
 
 # In Cluster
 loc.output <- paste0(getwd(), "/Spain_Tiger/OUTPUT/")
 loc.data <- paste0(getwd(), "/Spain_Tiger/DATA/")
 
+# In local
+loc.output <- paste0(getwd(), "/OUTPUT/")
+loc.data <- paste0(getwd(), "/DATA/")
+
 # Loading ---------------------------------------------------------------------
 # Count data
-tiger <- readRDS(paste0(loc.output, "bg_tiger_spain.rds"))
+tiger <- readRDS(paste0(loc.output, "bg_tiger_spain_daily.rds")) 
 # tiger$year <- as.factor(lubridate::year(tiger$end_date))
 
 tiger <- tiger %>% 
   mutate(
-    urban = discont_urban_fabric + sports_leisure + green_urban + cont_urban_fabric,
+    # urban = artificial_green_urban + industrial_transport + urban_fabric,
+    y = as.factor(year(end_date)),
     occu = case_when(
       females > 0 ~ 1,
       TRUE ~ 0),
@@ -50,13 +52,26 @@ tiger <- tiger %>%
   ) %>%
   filter(mean_relative_humidity < 101) # There is a wrong data --> ERA5 has no sense
 
+# Filtering by municpilaties with more than 2 samples:
+mun_selected <- tiger %>% group_by(id) %>% summarize(n = n()) %>% filter(n > 3)
+length(unique(mun_selected$id))
+
+tiger <- tiger %>% filter(id %in% mun_selected$id)
+
 # Mosquito Alert data
-ma_df <- readRDS(paste0(loc.output, "ma_tiger_spain.rds")) %>%
+ma_df <- readRDS(paste0(loc.output, "ma_tiger_spain_daily.rds")) %>%
   mutate(
     id = as.factor(id),
-    year = as.factor(year)
+    y = as.factor(year(date))
   ) %>%
-  filter(n_total_reports > 0)
+  filter(SE > 0) %>%
+  drop_na()
+
+# Filtering by municpilaties with more than 2 samples:
+mun_selected <- ma_df %>% group_by(id) %>% summarize(n = n()) %>% filter(n > 3)
+length(unique(mun_selected$id))
+
+ma_df <- ma_df %>% filter(id %in% mun_selected$id)
 
 # Modeling process -------------------------------------------------------------
 nchains = 4
@@ -69,25 +84,28 @@ wup = 2000
 # Only when you are working in local
 # Sys.setenv(PATH = "C:/Users/Catu/Documents/.cmdstan/cmdstan-2.31.0/stan/lib/stan_math/lib/tbb")
 
-mtiger5 <- brm(females ~ poly(mean_temperature, 2) + precipitation + 
-                 agricultural + 
-                 offset(log(trapping_effort)) + offset(log(n_traps)) +
-                 (1 | prov_name) + (1 | year),
-               data = tiger,
-               prior = set_prior("cauchy(0,2.5)", class="b"),
-               family = negbinomial(link = "log"),
-               iter = iteret,
-               chains = nchains,
-               cores = nchains,
-               backend = "cmdstanr",
-               threads = threading(threads_per_chain),
-               control = list(adapt_delta = 0.99))
-saveRDS(mtiger5, file = paste0(loc.output, "mtiger5.rds"))
+mtiger16 <- brm(females ~ poly(l21mean_temperature, 2) + l21precipitation + 
+                  offset(log(trapping_effort)) +
+                  (1 | id) + (1 | y),
+                data = tiger,
+                prior = set_prior("cauchy(0,2.5)", class="b"),
+                family = negbinomial(link = "log"),
+                iter = iteret,
+                chains = nchains,
+                cores = nchains,
+                backend = "cmdstanr",
+                save_pars = save_pars(all = TRUE),
+                threads = threading(threads_per_chain),
+                control = list(adapt_delta = 0.999))
+loo(mtiger16)
+loo(mtiger16, moment_match = TRUE, recompile = TRUE, reloo = TRUE)
+bayes_R2(mtiger16)
+saveRDS(mtiger16, file = paste0(loc.output, "mtiger16.rds"))
 
-mtiger1_occu <- brm(occu ~ poly(mean_temperature, 2) + precipitation + 
-                      agricultural + 
-                      offset(log(trapping_effort)) + offset(log(n_traps)) +
-                      (1 | prov_name) + (1 | year),
+mtiger3_occu <- brm(occu ~ poly(l21mean_temperature, 2) + 
+                      discont_urban_fabric + agricultural +
+                      offset(log(trapping_effort)) +
+                      (1 | id) + (1 | y),
                     data = tiger,
                     prior = set_prior("cauchy(0,2.5)", class="b"),
                     family = bernoulli(link = "logit"),
@@ -97,12 +115,16 @@ mtiger1_occu <- brm(occu ~ poly(mean_temperature, 2) + precipitation +
                     cores = nchains,
                     backend = "cmdstanr",
                     threads = threading(threads_per_chain),
+                    save_pars = save_pars(all = TRUE),
                     control = list(adapt_delta = 0.99))
-saveRDS(mtiger1_occu, file = paste0(loc.output, "mtiger1_occu.rds"))
+loo(mtiger3_occu)
+loo(mtiger3_occu, moment_match = TRUE, recompile = TRUE, reloo = TRUE)
+bayes_R2(mtiger3_occu)
+saveRDS(mtiger3_occu, file = paste0(loc.output, "mtiger3_occu.rds"))
 
-mtiger5_ma <- brm(any_reps ~ poly(mean_temperature, 2) + precipitation + 
-                    agricultural + 
-                    (1 | prov_name) + (1 | year) + offset(log(SE)),
+mtiger7_ma <- brm(any_reps ~ poly(mean_temperature, 2) + mean_relative_humidity + 
+                     (1 | id) + (1 | y) +
+                     offset(log(SE)),
                   data = ma_df,
                   prior = set_prior("cauchy(0,2.5)", class="b"),
                   family = bernoulli(link = "logit"),
@@ -112,8 +134,12 @@ mtiger5_ma <- brm(any_reps ~ poly(mean_temperature, 2) + precipitation +
                   cores = nchains,
                   backend = "cmdstanr",
                   threads = threading(threads_per_chain),
+                  save_pars = save_pars(all = TRUE),
                   control = list(adapt_delta = 0.99))
-saveRDS(mtiger5_ma, file = paste0(loc.output, "mtiger5_ma.rds"))
+loo(mtiger7_ma)
+loo(mtiger7_ma, moment_match = TRUE, recompile = TRUE, reloo = TRUE)
+bayes_R2(mtiger7_ma)
+saveRDS(mtiger7_ma, file = paste0(loc.output, "mtiger7_ma.rds"))
 
 # Models using number of report as SE (avoiding SE calculated from historical data)
 ma_df <- ma_df %>% 
@@ -121,7 +147,8 @@ ma_df <- ma_df %>%
 
 mtiger2_ma_rep <- brm(any_reps ~ poly(mean_temperature, 2) + precipitation + 
                         agricultural + green_urban +
-                        (1 | prov_name) + (1 | year) +  offset(log(n_total_reports + 0.0001)),
+                        (1 | prov_name) + (1 | year) +
+                        offset(log(n_total_reports + 0.0001)),
                       data = ma_df,
                       prior = set_prior("cauchy(0,2.5)", class="b"),
                       family = bernoulli(link = "logit"),
@@ -131,5 +158,6 @@ mtiger2_ma_rep <- brm(any_reps ~ poly(mean_temperature, 2) + precipitation +
                       cores = nchains,
                       backend = "cmdstanr",
                       threads = threading(threads_per_chain),
+                      save_pars = save_pars(all = TRUE),
                       control = list(adapt_delta = 0.99))
 saveRDS(mtiger2_ma_rep, file = paste0(loc.output, "mtiger2_ma_rep.rds"))

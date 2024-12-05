@@ -19,6 +19,7 @@ library(units)
 library(data.table)
 library(sf)
 
+rm(list = ls())
 # Directories ------------------------------------------------------------------
 
 loc.output <- paste0(getwd(), "/OUTPUT/")

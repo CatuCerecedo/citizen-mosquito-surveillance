@@ -16,14 +16,18 @@ loc.fig <- paste0(getwd(), "/FIGURES/")
 loc.era5 <- "/home/catuxa/Documents/Mosquito_Models/EU_Culex/ERA5_Download/"
 
 # In cluster
-loc.output <- paste0(getwd(), "/Spain_Culex/OUTPUT/")
-loc.data <- paste0(getwd(), "/Spain_Culex/DATA/")
-loc.era5 <- paste0(getwd(), "/Spain_Culex/ERA5_Download/")
+# loc.output <- paste0(getwd(), "/Spain_Culex/OUTPUT/")
+# loc.data <- paste0(getwd(), "/Spain_Culex/DATA/")
+# loc.era5 <- paste0(getwd(), "/Spain_Culex/ERA5_Download/")
 
 sf::sf_use_s2(FALSE)
 
+mdl_name <- "/mtiger16"
+fldr <- "Counts"
+sub <- "" # with _
+
 # Checking the daily predictions -----------------------------------------------
-folder = paste0(loc.output, "PREDICTIONS/MA_rep/")
+folder = paste0(loc.output, "PREDICTIONS/", fldr, mdl_name, "/")
 file_list = list.files(folder)
 file_list = file_list[!grepl("_sd", file_list)]
 # file_list = file_list[grepl("_ma.rds", file_list)]
@@ -33,7 +37,7 @@ for (i in file_list){
   print(i)
   
   pred_points <- readRDS(paste0(folder, i)) 
-  colnames(pred_points) <- c("municipality", "id", "lon", "lat", "pred_count") 
+  colnames(pred_points) <- c("municipality","id", "prov_name", "lon", "lat", "pred_count") 
 
   parts <- unlist(strsplit(i, "_|\\.rds"))
   
@@ -59,7 +63,7 @@ bg <- ggplot(df, aes(x = as.numeric(m), y = bg_avrg, color = year)) +
     y = "Monthly avg. of predicted \ncounts (Count model)",
     x = "Date"
   ) +
-  scale_x_continuous(breaks=seq(3, 11, 1)) +
+  scale_x_continuous(breaks=seq(1, 12, 1)) +
   theme_classic() 
 all$bg <- df$bg_avrg
 

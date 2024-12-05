@@ -47,7 +47,7 @@ for (i in 1:nrow(spain)) {
   
   mun <- spain[i, ]
   
-  if (i %% 100 == 0){
+  if (i %% 10 == 0){
    cat("row number: ", i, "/n") 
   }
   
@@ -70,7 +70,7 @@ for (i in 1:nrow(spain)) {
   results_list[[i]] <- freq_table
 }
 # saveRDS(results_list, file = paste0(loc.output, "mun_clc_original_list.rds"))
-
+results_list <- readRDS(paste0(loc.output, "mun_clc_original_list.rds"))
 results_df <- bind_rows(results_list)
 
 landcover_crop <- crop(landcover, spain)
@@ -87,7 +87,7 @@ results_df <- results_df %>%
 
 clc_surface <- results_df %>%
   mutate(
-    value = case_when(value == 1 ~ "cont_urban_fabric",
+    level_0 = case_when(value == 1 ~ "cont_urban_fabric",
                       value ==2 ~ "discont_urban_fabric",
                       value == 4 ~ "roads_rails",
                       value == 10 ~ "green_urban",
@@ -100,21 +100,45 @@ clc_surface <- results_df %>%
                       value %in% 37:39 ~ "marine_wetlands",
                       value %in% 40:41 ~ "inland_water",
                       value %in% 42:44 ~ "marine_water",
-                      value >= 45 ~ "no_data")
+                      value >= 45 ~ "no_data"),
+    level_2 = case_when(value %in% 1:2 ~ "urban_fabric",
+                        value %in% 3:6 ~ "industrial_transport",
+                        value %in% 7:9 ~ "mine_dump",
+                        value %in% 10:11 ~ "artificial_green_urban",
+                        value %in% 12:14 ~ "arable_land",
+                        value %in% 15:17 ~ "permanent_crops",
+                        value %in% 18 ~ "pasture",
+                        value %in% 19:22 ~ "agricultural",
+                        value %in% 23:25 ~ "forests",
+                        value %in% 26:29 ~ "scrub",
+                        value %in% 30:34 ~ "open",
+                        value %in% 35:36 ~ "inland_wet",
+                        value %in% 37:39 ~ "marine_wet",
+                        value %in% 40:41 ~ "inland_water",
+                        value %in% 42:44 ~ "marine_water",
+                        value >= 45 ~ "no_data"),
+    level_1 = case_when(value %in% 1:11 ~ "artificial_surface",
+                     value %in% 12:22 ~ "agricultural",
+                     value %in% 23:34 ~ "forest_natural_areas",
+                     value %in% 35:44 ~ "wetlands",
+                     value >= 45 ~ "no_data")
   ) %>%
   units::drop_units() %>%
   as.data.table()
+# saveRDS(clc_surface, file = paste0(loc.output, "mun_clc_fid_levels.rds"))
+clc_surface <- readRDS(paste0(loc.output, "mun_clc_fid_levels.rds"))
 
 clc_surface <- clc_surface %>%
-  group_by(value, municipality, id) %>%
+  dplyr::select(-level_0, -level_1) %>%
+  group_by(level_2, municipality, id) %>%
   summarise(
     per_clc = sum(per_clc, na.rm = TRUE)
   ) %>% 
   pivot_wider(
-    names_from = value,
+    names_from = level_2,
     values_from = per_clc
       )
 
 clc_surface[is.na(clc_surface)] <- 0
 
-saveRDS(clc_surface, file = paste0(loc.output, "clc_surface_mun.rds"))
+saveRDS(clc_surface, file = paste0(loc.output, "clc_surface_mun_level_2.rds"))

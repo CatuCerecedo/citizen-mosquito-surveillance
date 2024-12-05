@@ -4,6 +4,7 @@ library(terra)
 library(sf)
 library(ggplot2)
 library(tidyterra)
+library(tidyverse)
 
 rm(list = ls())
 
@@ -14,23 +15,28 @@ loc.data <- paste0(getwd(), "/DATA/")
 loc.fig <- paste0(getwd(), "/FIGURES/")
 loc.era5 <- "/home/catuxa/Documents/Mosquito_Models/EU_tiger/ERA5_Download/"
 
-# In cluster
-loc.output <- paste0(getwd(), "/Spain_Tiger/OUTPUT/")
-loc.data <- paste0(getwd(), "/Spain_Tiger/DATA/")
-loc.figures <- paste0(getwd(), "/Spain_Tiger/FIGURES/")
-loc.era5 <- paste0(getwd(), "/EU_tiger/ERA5_Download/")
+# # In cluster
+# loc.output <- paste0(getwd(), "/Spain_Tiger/OUTPUT/")
+# loc.data <- paste0(getwd(), "/Spain_Tiger/DATA/")
+# loc.figures <- paste0(getwd(), "/Spain_Tiger/FIGURES/")
+# loc.era5 <- paste0(getwd(), "/EU_tiger/ERA5_Download/")
 
 sf::sf_use_s2(FALSE)
+
+mdl <- "mtiger16"
+mdl_name <- "/mtiger16"
+fldr <- "Counts"
+sub <- "" # with _
 # Some checks ------------------------------------------------------------------
 # Mapping climatic variables
-wthr <- readRDS(paste0(loc.output, "daily_weather_data/prep_predictions_05_2020.rds"))
-
-prep_data_day <- wthr %>%
+wthr <- readRDS(paste0(loc.output, "monthly_weather_data/prep_08-2020.rds"))
+# st_geometry(wthr) <- "geometry"
+wthr <- wthr %>%
   janitor::clean_names() %>%
-  st_as_sf(coords = c( "lon", "lat"), crs = 4326, remove = FALSE) 
+  st_as_sf(coords = c( "lon", "lat"), crs = 4326, remove = FALSE)
 
 ggplot() + 
-  geom_sf(data = prep_data_day, aes(color = mean_temperature), size = 0.2) +
+  geom_sf(data = wthr, aes(color = precipitation), size = 0.2) +
   scale_color_distiller("", palette = "Spectral") +
   theme_classic()
 
@@ -55,19 +61,20 @@ for(y in years){
     print(paste0("Plotting: ", m, "-", y))
     iter <- iter + 1
     
-    pred <- readRDS(paste0(loc.output, "PREDICTIONS/MA/tiger_", m ,"_", y, "_ma.rds")) %>%
+    pred <- readRDS(paste0(loc.output, "PREDICTIONS/", fldr, mdl_name, "/tiger_", m ,"_", y, sub, ".rds")) %>%
       janitor::clean_names() %>%
       st_drop_geometry()
     
-    colnames(pred) <- c("municipality", "id", "lon", "lat", "pred_count") 
+    colnames(pred) <- c("municipality","id", "prov_name", "lon", "lat", "pred_count") 
+    # print(summary(pred$pred_count))
     
-    pred <- merge(pred, spain, by = c("municipality", "id"))
+    pred <- merge(pred, spain, by = c("municipality", "id", "prov_name"))
     st_geometry(pred) <- "geometry"
     
     plt <- ggplot() +
       geom_sf(data = pred, aes(fill = pred_count), color = "transparent",
               size = 0.01, alpha = 0.8, na.rm = TRUE) +
-      scale_fill_distiller("", palette = "Spectral") + 
+      scale_fill_distiller("", palette = "Spectral", na.value = "transparent") + 
       # xlim(-13, 5) +
       # ylim(34, 44) +
       ggtitle(paste0(m, "-", y)) +
@@ -93,7 +100,7 @@ a12 <- tiger_maps[[12]]
 
 ggpubr::ggarrange(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12,
                   common.legend = TRUE, nrow = 3, ncol = 4, legend = "right")
-ggsave(paste0(loc.fig, "monthly_ma_tiger_2020.png"), units = "cm", bg = "white",
+ggsave(paste0(loc.fig, "monthly_tiger_2020_", mdl, ".png"), units = "cm", bg = "white",
        height = 25, width = 25)
 
 a1 <- tiger_maps[[13]]
@@ -111,7 +118,7 @@ a12 <- tiger_maps[[24]]
 
 ggpubr::ggarrange(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12,
                   common.legend = TRUE, nrow = 3, ncol = 4, legend = "right")
-ggsave(paste0(loc.fig, "monthly_ma_tiger_2022.png"), units = "cm", bg = "white",
+ggsave(paste0(loc.fig, "monthly_tiger_2021_", mdl, ".png"), units = "cm", bg = "white",
        height = 25, width = 25)
 
 a1 <- tiger_maps[[25]]
@@ -129,108 +136,54 @@ a12 <- tiger_maps[[36]]
 
 ggpubr::ggarrange(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12,
                   common.legend = TRUE, nrow = 3, ncol = 4, legend = "right")
-ggsave(paste0(loc.fig, "monthly_ma_tiger_2023.png"), units = "cm", bg = "white",
+ggsave(paste0(loc.fig, "monthly_tiger_2022_", mdl, ".png"), units = "cm", bg = "white",
        height = 25, width = 25)
 
 rm(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12)
 
-# Grouped by land cover --------------------------------------------------------
-month_values <- do.call(cbind, month_values)
-pred <- cbind(pred[,1:4], month_values)
+# Predicted plot ---------------------------------------------------------------
+bg_pred <- ggpubr::ggarrange(a7, a8, common.legend = TRUE, nrow = 1, ncol = 2, legend = "right")
+suit_pred <- ggpubr::ggarrange(a7, a8, common.legend = TRUE, nrow = 1, ncol = 2, legend = "right")
+ma_pred <- ggpubr::ggarrange(a7, a8, common.legend = TRUE, nrow = 1, ncol = 2, legend = "right")
 
-n_columns <- c("pixel_id", "longitude", "latitude", "country")
-for (y in years){
-  for (m in months){
-    n_columns <- append(n_columns, paste0("X", m, "_", y))
-  }
-}
-colnames(pred) <- c(n_columns, "geometry")
-
-path <- paste0(loc.data, "u2018_clc2018_v2020_20u1_raster100m/DATA/U2018_CLC2018_V2020_20u1.tif")
-landcover <- rast(path)
-
-# Reclassify raster
-
-pred <- pred %>%
-  st_transform(crs(landcover))
-lc <- terra::extract(landcover, pred)
-
-# Reclassify land covers
-lc <- lc %>% 
-  mutate(land_cover = dplyr::case_when(
-    ID == 1 ~ "cont_urban_fabric",
-    ID == 2 ~ "discont_urban_fabric",
-    ID == 4 ~ "roads_rails",
-    ID == 10 ~ "green_urban",
-    ID == 11 ~ "sports_leisure",
-    ID %in% c(3, 5:9) ~ "other_artificial",
-    ID %in% 12:22 ~ "agricultural",
-    ID %in% 23:29 ~ "forests_scrub",
-    ID %in% 30:34 ~ "open",
-    ID %in% 35:36 ~ "inland_wetlands",
-    ID %in% 37:39 ~ "marine_wetlands",
-    ID %in% 40:41 ~ "inland_water",
-    ID %in% 42:44 ~ "marine_water",
-    ID >= 45 ~ "no_data",
-    TRUE ~ as.character(ID))
-  )
-
-pred$land_cover <- lc$land_cover
-
-pred <- pred %>%
-  rowwise() %>%
-  mutate(
-    pred = mean(dplyr::c_across(starts_with("X")), na.rm = TRUE)
-  ) %>%
-  ungroup()
-
-# Ploting the prediction standard error (uncertainty) by land use
-
-b <- ggplot(pred %>% filter(land_cover != "no_data")) +
-  geom_boxplot(aes(x = land_cover, y = pred)) +
-  theme_classic() +
-  ggtitle("Average uncertainty of Count model") +
-  theme(
-    axis.text.x = element_text(angle = 45, hjust = 1)
-  ) 
-
-ggpubr::ggarrange(a, b, nrow = 2)
-ggsave(file = paste0(loc.fig, "sd_Count_MA_by_land_uses.png"), 
-       units = "cm", height = 15, width = 20, bg = "white")
+ggpubr::ggarrange(suit_pred, bg_pred, ma_pred,
+                  nrow = 3, ncol = 1)
+ggsave(file = paste0(loc.fig, "predicted_plot.png"), 
+       units = "cm", height = 25, width = 25, bg = "white")
 
 # Plotting spatial correlations ------------------------------------------------
-years <- c("2021", "2022", "2023")
+years <- c("2020", "2021", "2022")
 months <- c("01", "02", "03", "04", "05", "06" ,"07", "08", "09", "10", "11", "12")
 
 spatial_corr <- vector(mode = "list")
 for(y in years){
-  pred_bg_all <- readRDS(paste0(loc.output, "PREDICTIONS/Counts/tiger_", "07" ,"_", y, ".rds")) %>%
+  pred_bg_all <- readRDS(paste0(loc.output, "PREDICTIONS/Counts/mtiger10/tiger_", "07" ,"_", y, ".rds")) %>%
     janitor::clean_names() %>%
-    dplyr::select(municipality, id, lon, lat)
-  pred_ma_all <- readRDS(paste0(loc.output, "PREDICTIONS/MA/tiger_", "07" ,"_", y, "_ma.rds")) %>%
+    dplyr::select(municipality, id, lon, lat, prov_name)
+  pred_ma_all <- readRDS(paste0(loc.output, "PREDICTIONS/MA/mtiger7_ma/tiger_", "07" ,"_", y, "_ma.rds")) %>%
     janitor::clean_names() %>%
-    dplyr::select(municipality, id, lon, lat)
+    dplyr::select(municipality, id, lon, lat, prov_name)
   
   for (m in months){
     print(paste0("Plotting: ", m, "-", y))
     
     # Si quiero ploter la correlación con suitability
-    pred_bg <- readRDS(paste0(loc.output, "PREDICTIONS/Counts/tiger_", m ,"_", y, ".rds")) %>%
+    pred_bg <- readRDS(paste0(loc.output, "PREDICTIONS/Counts/mtiger10/tiger_", m ,"_", y, ".rds")) %>%
       janitor::clean_names() %>%
       st_drop_geometry()
     # pred_bg <- readRDS(paste0(loc.output, "PREDICTIONS/BG_abundance/Monthly/tiger_", m ,"_", y, ".rds")) %>%
     #   janitor::clean_names() %>%
     #   st_drop_geometry()
-    pred_bg_all <- merge(pred_bg_all, pred_bg, by = c("municipality", "id", "lon", "lat"))
+    pred_bg_all <- merge(pred_bg_all, pred_bg, by = c("municipality", "id", "lon", "lat", "prov_name"))
     
-    pred_ma <- readRDS(paste0(loc.output, "PREDICTIONS/MA/tiger_", m ,"_", y, "_ma.rds")) %>%
+    pred_ma <- readRDS(paste0(loc.output, "PREDICTIONS/MA/mtiger7_ma/tiger_", m ,"_", y, "_ma.rds")) %>%
       janitor::clean_names() %>%
       st_drop_geometry()
-    pred_ma_all <- merge(pred_ma_all, pred_ma, by = c("municipality", "id", "lon", "lat"))
+    pred_ma_all <- merge(pred_ma_all, pred_ma, by = c("municipality", "id", "lon", "lat", "prov_name"))
     
     }
-  colnames(pred_bg_all) <- c("municipality", "id", "lon", "lat", "x03", "x04", "x05", "x06" ,"x07", "x08", "x09", "x10", "x11")
-  colnames(pred_ma_all) <- c("municipality", "id", "lon", "lat", "x03", "x04", "x05", "x06" ,"x07", "x08", "x09", "x10", "x11")
+  colnames(pred_bg_all) <- c("municipality", "id", "lon", "lat", "prov_name", "x01", "x02", "x03", "x04", "x05", "x06" ,"x07", "x08", "x09", "x10", "x11", "x12")
+  colnames(pred_ma_all) <- c("municipality", "id", "lon", "lat", "prov_name", "x01", "x02", "x03", "x04", "x05", "x06" ,"x07", "x08", "x09", "x10", "x11", "x12")
   
   cor_df <- data.frame()
   for (i in 1:nrow(pred_bg_all)){
@@ -242,7 +195,8 @@ for(y in years){
       id = pred_bg_all[i, 2],
       lon = pred_bg_all[i, 3],
       lat = pred_bg_all[i, 4],
-      rho = cor(as.numeric(pred_bg_all[i, 5:13]), as.numeric(pred_ma_all[i, 5:13]), method = "spearman"),
+      prov_name = pred_bg_all[i, 5],
+      rho = cor(as.numeric(pred_bg_all[i, 6:17]), as.numeric(pred_ma_all[i, 6:17]), method = "spearman"),
       year = y
       )
     cor_df <- rbind(cor_df, cor_row)
@@ -289,25 +243,25 @@ for(y in years){
   for (m in months){
     print(paste0("Plotting: ", m, "-", y))
     
-    pred_bg <- readRDS(paste0(loc.output, "PREDICTIONS/Counts/tiger_", m ,"_", y, ".rds")) %>%
+    pred_bg <- readRDS(paste0(loc.output, "PREDICTIONS/Counts/mtiger10/tiger_", m ,"_", y, ".rds")) %>%
       janitor::clean_names() %>%
       st_drop_geometry()
-    colnames(pred_bg) <- c("municipality", "id", "lon", "lat", "bg")
-    pred_bg <- pred_bg %>% filter((pixel_id %in% tiger$pixel_id))
-    pred_suit <- readRDS(paste0(loc.output, "PREDICTIONS/Suitability/tiger_", m ,"_", y, "_occu.rds")) %>%
+    colnames(pred_bg) <- c("municipality", "id", "lon", "lat", "prov_name", "bg")
+    # pred_bg <- pred_bg %>% filter((pixel_id %in% tiger$pixel_id))
+    pred_suit <- readRDS(paste0(loc.output, "PREDICTIONS/Suitability/mtiger3_occu/tiger_", m ,"_", y, "_occu.rds")) %>%
       janitor::clean_names() %>%
       st_drop_geometry()
-    colnames(pred_suit) <- c("municipality", "id", "lon", "lat",  "suit")
+    colnames(pred_suit) <- c("municipality", "id", "lon", "lat", "prov_name", "suit")
     # pred_suit <- pred_suit %>% filter((pixel_id %in% tiger$pixel_id))
-    pred_ma <- readRDS(paste0(loc.output, "PREDICTIONS/MA/tiger_", m ,"_", y, "_ma.rds")) %>%
+    pred_ma <- readRDS(paste0(loc.output, "PREDICTIONS/MA/mtiger7_ma/tiger_", m ,"_", y, "_ma.rds")) %>%
       janitor::clean_names() %>%
       st_drop_geometry()
-    colnames(pred_ma) <- c("municipality", "id", "lon", "lat",  "ma")
+    colnames(pred_ma) <- c("municipality", "id", "lon", "lat", "prov_name", "ma")
     # pred_ma <- pred_ma %>% filter((pixel_id %in% tiger$pixel_id))
     
     # Joining tables
-    pred <- merge(pred_bg, pred_suit, by = c("municipality", "id", "lon", "lat"))
-    pred <- merge(pred, pred_ma, by = c("municipality", "id", "lon", "lat"))
+    pred <- merge(pred_bg, pred_suit, by = c("municipality", "id", "lon", "lat", "prov_name"))
+    pred <- merge(pred, pred_ma, by = c("municipality", "id", "lon", "lat", "prov_name"))
     
     rm(pred_bg, pred_suit, pred_ma)
     
@@ -333,7 +287,7 @@ cor_predictions <- tidyr::pivot_longer(
 )
 
 # Define una paleta de colores personalizada
-custom_colors <- c("2021" = "#490092", "2022" = "#004949", "2023" = "#924900")
+custom_colors <- c("2020" = "#490092", "2021" = "#004949", "2022" = "#924900")
 
 # Crear el gráfico con ggplot2
 ggplot(cor_predictions, aes(x = month, y = value, color = factor(year), shape = comparison, linetype = comparison)) +
