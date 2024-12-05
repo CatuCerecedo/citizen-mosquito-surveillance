@@ -1,5 +1,4 @@
 ###################### Preparing Mosquito Alert Data ###########################
-
 library(tidyverse)
 library(sf)
 library(terra)
@@ -9,7 +8,6 @@ library(readxl)
 
 rm(list = ls())
 # Directories ------------------------------------------------------------------
-
 # In cluster
 loc.output <- paste0(getwd(), "/Spain_Tiger/OUTPUT/")
 loc.data <- paste0(getwd(), "/Spain_Tiger/DATA/")
@@ -25,7 +23,7 @@ sf::sf_use_s2(FALSE)
 spain <- readRDS(paste0(loc.output, "spain_mun.rds")) %>%
   mutate(
     municipality = if_else(is.na(municipality), "no_name", municipality)
-  )
+  ) %>% st_transform(4326)
 
 # Checking all municipalities
 ggplot() +
