@@ -133,10 +133,10 @@ bites_df <- st_centroid(bites_df) %>%
 # source("/home/usuaris/ccerecedo/EU_Culex/read_and_extract_grib_data.R")
 
 # In local
-source("read_and_extract_nc_data_daily_for_bites.R")
+# source("read_and_extract_nc_data_daily_for_bites.R")
 
 # In cluster
-source("Spain_Tiger/read_and_extract_nc_data_daily_for_bites.R")
+source("/home/usuaris/ccerecedo/Spain_Tiger/read_and_extract_nc_data_daily_for_bites.R")
 
 bites_df <- bites_df %>%
   mutate(
