@@ -194,8 +194,17 @@ ggplot(all_data, aes_string(x = "residuals", y = "precipitation")) +
   ) +
   theme_classic()
 
+ggplot(all_data, aes(x = abs(residuals), y = mean_relative_humidity)) +
+  geom_point(alpha = 0.5, color = "#3288bd") +
+  geom_smooth(method = "lm", color = "#d53e4f", se = FALSE) +
+  labs(
+    x = "Residuals",
+    y = "Mean Relative humidity"
+  ) +
+  theme_classic()
+
 ggplot(all_data) +
-  geom_point(aes(x = ma, y = bg, color = residuals), alpha = 0.6, size = 0.5) +
+  geom_point(aes(x = ma, y = bg, color = mean_relative_humidity), alpha = 0.6, size = 0.5) +
   # geom_smooth(aes(x = ma, y = bg), method = "lm", formula = y ~ poly(x, 2), linetype = "dashed", color = "purple") +
   labs(
     x = "Mosquito Alert predicted probabilities",
