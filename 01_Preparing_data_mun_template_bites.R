@@ -26,9 +26,9 @@ spain <- readRDS(paste0(loc.output, "spain_mun.rds")) %>%
   ) %>% st_transform(4326)
 
 # Checking all municipalities
-ggplot() +
-  geom_sf(data = spain, fill = "black", color = "transparent",
-          size = 0.01, alpha = 0.8, na.rm = TRUE) 
+# ggplot() +
+#   geom_sf(data = spain, fill = "black", color = "transparent",
+#           size = 0.01, alpha = 0.8, na.rm = TRUE) 
 
 # Download Bites data ----------------------------------------------------------
 bites <- read_excel(paste0(loc.data, "bites.xlsx"), col_names = TRUE) %>%
@@ -149,11 +149,11 @@ bites_df <- bites_df %>%
 cat("------------------------- Number of rows:", nrow(bites_df), "\n")
 bites_df_1 <- bites_df[1:1371, ]
 bites_df_2 <- bites_df[1372:nrow(bites_df), ]
-weather_data <- mclapply(1:nrow(bites_df_1), function(i){
+weather_data <- mclapply(1:nrow(bites_df_2), function(i){
   
   cat(paste0("Number row:", i, "\n"))
   
-  data_row <- bites_df_1[i, ]
+  data_row <- bites_df_2[i, ]
   
   ex_wt <- extract_weather(data_row)
   
