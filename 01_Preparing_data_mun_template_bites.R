@@ -161,6 +161,8 @@ weather_data <- mclapply(1:nrow(bites_df_2), function(i){
 }
 , mc.cores = 10)
 
+saveRDS(weather_data, file = paste0(loc.output, "bites_spain_climatic_variables_pixel_daily_list.rds"))
+
 bites_wth <- do.call(rbind, weather_data) 
 
 saveRDS(bites_wth, file = paste0(loc.output, "bites_spain_climatic_variables_pixel_daily.rds"))
@@ -168,13 +170,13 @@ saveRDS(bites_wth, file = paste0(loc.output, "bites_spain_climatic_variables_pix
 # Adding Corine Land Covers ---------------------------------------------------
 clc_surface <- readRDS(paste0(loc.output, "clc_surface_mun_level_0.rds"))
 
-ma <- merge(ma_wth, clc_surface, by = c("municipality", "id"), all.x = TRUE) # N = 12566 // 42025
+bites <- merge(bites_wth, clc_surface, by = c("municipality", "id"), all.x = TRUE) # N = 12566 // 42025
 ma$no_data <- NULL
 
-saveRDS(ma, file = paste0(loc.output, "bites_spain_daily.rds"))
+saveRDS(bites, file = paste0(loc.output, "bites_spain_daily.rds"))
 
 # Adding population density ----------------------------------------------------
-ma <- ma %>% mutate(y = as.factor(year(end_date)))
+bites <- bites %>% mutate(y = as.factor(year(end_date)))
 
 library(mapSpain) # Load library mapSpain to have shapefile with NATCODE municipalities Spain
 # Read File with the number of people per year
@@ -205,6 +207,6 @@ for(n in c("20", "21", "22", "23")){
   pop_full <- rbind(pop_full, esp_can)
 }
 
-ma <- merge(ma, pop_full, by = c("id", "y"), all.x = TRUE)
+bites <- merge(bites, pop_full, by = c("id", "y"), all.x = TRUE)
 
-saveRDS(ma, file = paste0(loc.output, "bites_spain_daily.rds"))
+saveRDS(bites, file = paste0(loc.output, "bites_spain_daily.rds"))
