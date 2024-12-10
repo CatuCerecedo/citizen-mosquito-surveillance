@@ -147,8 +147,8 @@ bites_df <- bites_df %>%
 # In cluster
 # source("/home/usuaris/ccerecedo/EU_Culex/read_and_extract_grib_data.R")
 cat("------------------------- Number of rows:", nrow(bites_df), "\n")
-bites_df_1 <- bites_df[1:1371, ]
-bites_df_2 <- bites_df[1372:nrow(bites_df), ]
+bites_df_1 <- bites_df %>% filter(year(date) != 2020 | month(date) != 1)
+bites_df_2 <- bites_df_1 %>% filter(year(date) != 2021 | month(date) != 1)
 weather_data <- mclapply(1:nrow(bites_df_2), function(i){
   
   cat(paste0("Number row:", i, "\n"))

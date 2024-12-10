@@ -11,6 +11,7 @@ rm(list = ls())
 # Directories ------------------------------------------------------------------
 loc.output <- paste0(getwd(), "/OUTPUT/")
 loc.data <- paste0(getwd(), "/DATA/")
+loc.fig <- paste0(getwd(), "/FIGURES/")
 loc.heavy <- paste0(getwd(), "/Heavy_files/")
 loc.clc <- paste0(getwd(), "/OUTPUT/land_cover_raster/")
 
@@ -211,3 +212,25 @@ ggplot(all_data) +
     y = "Count predicted values"
   ) +
   theme_classic()
+
+# Plotting mean relative humidity ----------------------------------------------
+spain <- readRDS(paste0(loc.output, "spain_mun.rds")) %>%
+  mutate(
+    municipality = if_else(is.na(municipality), "no_name", municipality)
+  )
+
+wth <- readRDS(paste0(loc.output, "monthly_weather_data/prep_", 
+                      "12", "-", "2020", ".rds"))[, c(2,9:12)]
+
+wth <- merge(spain, wth, by = "id")
+
+f <- ggplot() + 
+  geom_sf(data = wth, aes(fill = mean_relative_humidity), color = "transparent", size = 0.2) +
+  scale_fill_distiller("", palette = "Spectral") +
+  labs(title = "December 2020") +
+  theme_classic()
+
+ggpubr::ggarrange(a, b, c, d, e, f, nrow = 2, ncol = 3, 
+                  common.legend = TRUE, legend = "right")
+ggsave(paste0(loc.fig, "MRH_2020.png"), units = "cm", bg = "white",
+       height = 25, width = 25)
