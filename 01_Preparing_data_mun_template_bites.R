@@ -1,4 +1,4 @@
-###################### Preparing Mosquito Alert Data ###########################
+####################### Preparing Mosquito Alert Data ###########################
 library(tidyverse)
 library(sf)
 library(terra)
@@ -39,7 +39,7 @@ bites <- read_excel(paste0(loc.data, "bites.xlsx"), col_names = TRUE) %>%
   ) %>%
   dplyr::select(date, time, longitude, latitude) %>% 
   st_as_sf(coords = c("longitude", "latitude"), crs = 4326, remove = FALSE) 
-  
+
 index_intersects <- st_intersects(bites, spain) 
 index_intersects <- lengths(index_intersects) > 0
 
@@ -111,7 +111,7 @@ bites_df <-  bites_df %>% mutate(
     (date >= as_date("2017-04-01") & date < as_date("2019-02-01")) ~ "p5",
     (date >= as_date("2019-02-01") & date < as_date("2020-10-01")) ~ "p6",
     (date >= as_date("2020-10-01")) ~ "p7")
-  )
+)
 
 summary(as.factor(bites_df$n_target_reps))
 
