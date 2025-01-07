@@ -110,4 +110,104 @@ options(na.action = "na.fail")
 tmb_full_dredge <- dredge(tmb_full, cluster = 4, rank = "AICc", trace = 2, # fixed = "cond(log(trapping_effort))", # getAllTerms(tmb_full)
                           m.lim = c(2, 7))
 options(na.action = "na.omit")
-                   
+
+# Bites ------------------------------------------------------------------------
+bites <- readRDS(file = paste0(loc.output, "bites_spain_daily.rds"))
+
+func_f <- as.formula(paste("any_reps ~ ", 
+                             paste(names(bites)[21:38], collapse = " + "),
+                             "+ offset(log(SE)) + (1 | y) + (1 | id)"))
+
+tmb_full <- glmmTMB(func_f,
+                    data = bites, family = binomial(link = "logit"))
+
+tmb_full <- delate_variables(tmb_full)
+
+func_f <- as.formula(paste("any_reps ~ ", 
+                           paste(c("max_temperature", "min_temperature", 
+                                   "mean_temperature", "precipitation",
+                                   "mean_relative_humidity", "wind_speed"), collapse = " + "),
+                           "+ offset(log(SE)) + (1 | y) + (1 | id)"))
+
+tmb_full <- glmmTMB(func_f,
+                    data = bites, family = binomial(link = "logit"))
+
+tmb_full <- delate_variables(tmb_full)
+
+options(na.action = "na.fail")
+tmb_full_dredge <- dredge(tmb_full, cluster = 4, rank = "AICc", trace = 2, # fixed = "cond(log(trapping_effort))", # getAllTerms(tmb_full)
+                          m.lim = c(2, 7))
+options(na.action = "na.omit")   
+
+func_f <- as.formula(paste("any_reps ~ ", 
+                           paste(c("l21max_temperature", "l21min_temperature", 
+                                   "l21mean_temperature", "l21precipitation",
+                                   "l21mean_relative_humidity", "l21wind_speed"), collapse = " + "),
+                           "+ offset(log(SE)) + (1 | y) + (1 | id)"))
+
+l21tmb_full <- glmmTMB(func_f,
+                    data = bites, family = binomial(link = "logit"))
+
+l21tmb_full <- delate_variables(l21tmb_full)
+
+options(na.action = "na.fail")
+l21tmb_full_dredge <- dredge(l21tmb_full, cluster = 4, rank = "AICc", trace = 2,  fixed = "cond(log(SE))", # getAllTerms(tmb_full)
+                          m.lim = c(2, 7))
+options(na.action = "na.omit") 
+
+func_f <- as.formula(paste("any_reps ~ ", 
+                           paste(c("l21min_temperature","l21precipitation",
+                                   "l21mean_relative_humidity"), collapse = " + "),
+                           "+ offset(log(SE)) + (1 | y) + (1 | id)"))
+
+tmb_full <- glmmTMB(func_f,
+                    data = bites, family = binomial(link = "logit"))
+
+tmb_full <- delate_variables(tmb_full)
+
+options(na.action = "na.fail")
+tmb_full_dredge <- dredge(tmb_full, cluster = 4, rank = "AICc", trace = 2, fixed = "cond(offset(log(SE)))", # getAllTerms(tmb_full)
+                          m.lim = c(2, 7))
+options(na.action = "na.omit")  
+
+func_f <- as.formula(paste("any_reps ~ ", 
+                           paste(names(bites)[39:53], collapse = " + "),
+                           "+ offset(log(SE)) + (1 | y) + (1 | id)"))
+
+tmb_full <- glmmTMB(func_f,
+                    data = bites, family = binomial(link = "logit"))
+
+tmb_full <- delate_variables(tmb_full)
+
+options(na.action = "na.fail")
+tmb_full_dredge <- dredge(tmb_full, cluster = 4, rank = "AICc", trace = 2, fixed = "cond(offset(log(SE)))", # getAllTerms(tmb_full)
+                          m.lim = c(2, 7))
+options(na.action = "na.omit")  
+
+saveRDS(tmb_full_dredge, paste0(loc.output, "dredge_clc.rds"))
+
+bites <- readRDS(file = paste0(loc.output, "bites_spain_daily.rds"))
+
+# Potential variables
+func_f <- as.formula(paste("any_reps ~ ", 
+                           paste(c("agricultural", "agricultural", "inland_wetlands", 
+                             "marine_water", "other_artificial", "cont_urban_fabric", 
+                             "forests_scrub", "inland_water", "roads_rails", 
+                             "green_urban", "sports_leisure", "open", "marine_wetlands", 
+                             "l21min_temperature", "l21precipitation", "l21mean_relative_humidity"), 
+                           collapse = " + "),
+                           "+ offset(log(SE)) + (1 | y) + (1 | id)"))
+
+tmb_full <- glmmTMB(func_f,
+                    data = bites, family = binomial(link = "logit"))
+
+tmb_full <- delate_variables(tmb_full)
+
+options(na.action = "na.fail")
+tmb_full_dredge <- dredge(tmb_full, cluster = 4, rank = "AICc", trace = 2, fixed = "cond(offset(log(SE)))", # getAllTerms(tmb_full)
+                          m.lim = c(2, 7))
+options(na.action = "na.omit")  
+
+saveRDS(tmb_full_dredge, paste0(loc.output, "dredge_potential_variables.rds"))
+
+model.avg(tmb_full_dredge, subset = delta < 2)

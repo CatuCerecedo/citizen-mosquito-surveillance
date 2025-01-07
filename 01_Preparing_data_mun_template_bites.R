@@ -171,7 +171,7 @@ saveRDS(bites_wth, file = paste0(loc.output, "bites_spain_climatic_variables_pix
 clc_surface <- readRDS(paste0(loc.output, "clc_surface_mun_level_0.rds"))
 
 bites <- merge(bites_wth, clc_surface, by = c("municipality", "id"), all.x = TRUE) # N = 12566 // 42025
-ma$no_data <- NULL
+bites$no_data <- NULL
 
 saveRDS(bites, file = paste0(loc.output, "bites_spain_daily.rds"))
 

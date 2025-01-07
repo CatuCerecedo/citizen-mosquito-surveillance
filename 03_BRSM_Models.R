@@ -84,80 +84,100 @@ wup = 2000
 # Only when you are working in local
 # Sys.setenv(PATH = "C:/Users/Catu/Documents/.cmdstan/cmdstan-2.31.0/stan/lib/stan_math/lib/tbb")
 
-mtiger16 <- brm(females ~ poly(l21mean_temperature, 2) + l21precipitation + 
-                  offset(log(trapping_effort)) +
-                  (1 | id) + (1 | y),
-                data = tiger,
+# mtiger16 <- brm(females ~ poly(l21mean_temperature, 2) + l21precipitation + 
+#                   offset(log(trapping_effort)) +
+#                   (1 | id) + (1 | y),
+#                 data = tiger,
+#                 prior = set_prior("cauchy(0,2.5)", class="b"),
+#                 family = negbinomial(link = "log"),
+#                 iter = iteret,
+#                 chains = nchains,
+#                 cores = nchains,
+#                 backend = "cmdstanr",
+#                 save_pars = save_pars(all = TRUE),
+#                 threads = threading(threads_per_chain),
+#                 control = list(adapt_delta = 0.999))
+# loo(mtiger16)
+# loo(mtiger16, moment_match = TRUE, recompile = TRUE, reloo = TRUE)
+# bayes_R2(mtiger16)
+# saveRDS(mtiger16, file = paste0(loc.output, "mtiger16.rds"))
+# 
+# mtiger3_occu <- brm(occu ~ poly(l21mean_temperature, 2) + 
+#                       discont_urban_fabric + agricultural +
+#                       offset(log(trapping_effort)) +
+#                       (1 | id) + (1 | y),
+#                     data = tiger,
+#                     prior = set_prior("cauchy(0,2.5)", class="b"),
+#                     family = bernoulli(link = "logit"),
+#                     iter = iteret,
+#                     warmup = wup,
+#                     chains = nchains,
+#                     cores = nchains,
+#                     backend = "cmdstanr",
+#                     threads = threading(threads_per_chain),
+#                     save_pars = save_pars(all = TRUE),
+#                     control = list(adapt_delta = 0.99))
+# loo(mtiger3_occu)
+# loo(mtiger3_occu, moment_match = TRUE, recompile = TRUE, reloo = TRUE)
+# bayes_R2(mtiger3_occu)
+# saveRDS(mtiger3_occu, file = paste0(loc.output, "mtiger3_occu.rds"))
+# 
+# mtiger7_ma <- brm(any_reps ~ poly(mean_temperature, 2) + mean_relative_humidity + 
+#                      (1 | id) + (1 | y) +
+#                      offset(log(SE)),
+#                   data = ma_df,
+#                   prior = set_prior("cauchy(0,2.5)", class="b"),
+#                   family = bernoulli(link = "logit"),
+#                   iter = iteret,
+#                   warmup = wup,
+#                   chains = nchains,
+#                   cores = nchains,
+#                   backend = "cmdstanr",
+#                   threads = threading(threads_per_chain),
+#                   save_pars = save_pars(all = TRUE),
+#                   control = list(adapt_delta = 0.99))
+# loo(mtiger7_ma)
+# loo(mtiger7_ma, moment_match = TRUE, recompile = TRUE, reloo = TRUE)
+# bayes_R2(mtiger7_ma)
+# saveRDS(mtiger7_ma, file = paste0(loc.output, "mtiger7_ma.rds"))
+# 
+# # Models using number of report as SE (avoiding SE calculated from historical data)
+# ma_df <- ma_df %>% 
+#   filter(n_total_reports > 0) # Si no hay esfuerzo de muestreo el dato no debería de estar.
+# 
+# mtiger2_ma_rep <- brm(any_reps ~ poly(mean_temperature, 2) + precipitation + 
+#                         agricultural + green_urban +
+#                         (1 | prov_name) + (1 | year) +
+#                         offset(log(n_total_reports + 0.0001)),
+#                       data = ma_df,
+#                       prior = set_prior("cauchy(0,2.5)", class="b"),
+#                       family = bernoulli(link = "logit"),
+#                       iter = iteret,
+#                       warmup = wup,
+#                       chains = nchains,
+#                       cores = nchains,
+#                       backend = "cmdstanr",
+#                       threads = threading(threads_per_chain),
+#                       save_pars = save_pars(all = TRUE),
+#                       control = list(adapt_delta = 0.99))
+# saveRDS(mtiger2_ma_rep, file = paste0(loc.output, "mtiger2_ma_rep.rds"))
+
+bites <- readRDS(file = paste0(loc.output, "bites_spain_daily.rds"))
+
+mbites_6 <- brm(any_reps ~ poly(l21min_temperature, 2) + 
+                  agricultural + other_artificial + green_urban + discont_urban_fabric +
+                  (1 | id) + (1 | y) + 
+                  offset(log(SE)),
+                data = bites,
                 prior = set_prior("cauchy(0,2.5)", class="b"),
-                family = negbinomial(link = "log"),
+                family = bernoulli(link = "logit"),
                 iter = iteret,
+                warmup = wup,
                 chains = nchains,
                 cores = nchains,
                 backend = "cmdstanr",
-                save_pars = save_pars(all = TRUE),
                 threads = threading(threads_per_chain),
-                control = list(adapt_delta = 0.999))
-loo(mtiger16)
-loo(mtiger16, moment_match = TRUE, recompile = TRUE, reloo = TRUE)
-bayes_R2(mtiger16)
-saveRDS(mtiger16, file = paste0(loc.output, "mtiger16.rds"))
-
-mtiger3_occu <- brm(occu ~ poly(l21mean_temperature, 2) + 
-                      discont_urban_fabric + agricultural +
-                      offset(log(trapping_effort)) +
-                      (1 | id) + (1 | y),
-                    data = tiger,
-                    prior = set_prior("cauchy(0,2.5)", class="b"),
-                    family = bernoulli(link = "logit"),
-                    iter = iteret,
-                    warmup = wup,
-                    chains = nchains,
-                    cores = nchains,
-                    backend = "cmdstanr",
-                    threads = threading(threads_per_chain),
-                    save_pars = save_pars(all = TRUE),
-                    control = list(adapt_delta = 0.99))
-loo(mtiger3_occu)
-loo(mtiger3_occu, moment_match = TRUE, recompile = TRUE, reloo = TRUE)
-bayes_R2(mtiger3_occu)
-saveRDS(mtiger3_occu, file = paste0(loc.output, "mtiger3_occu.rds"))
-
-mtiger7_ma <- brm(any_reps ~ poly(mean_temperature, 2) + mean_relative_humidity + 
-                     (1 | id) + (1 | y) +
-                     offset(log(SE)),
-                  data = ma_df,
-                  prior = set_prior("cauchy(0,2.5)", class="b"),
-                  family = bernoulli(link = "logit"),
-                  iter = iteret,
-                  warmup = wup,
-                  chains = nchains,
-                  cores = nchains,
-                  backend = "cmdstanr",
-                  threads = threading(threads_per_chain),
-                  save_pars = save_pars(all = TRUE),
-                  control = list(adapt_delta = 0.99))
-loo(mtiger7_ma)
-loo(mtiger7_ma, moment_match = TRUE, recompile = TRUE, reloo = TRUE)
-bayes_R2(mtiger7_ma)
-saveRDS(mtiger7_ma, file = paste0(loc.output, "mtiger7_ma.rds"))
-
-# Models using number of report as SE (avoiding SE calculated from historical data)
-ma_df <- ma_df %>% 
-  filter(n_total_reports > 0) # Si no hay esfuerzo de muestreo el dato no debería de estar.
-
-mtiger2_ma_rep <- brm(any_reps ~ poly(mean_temperature, 2) + precipitation + 
-                        agricultural + green_urban +
-                        (1 | prov_name) + (1 | year) +
-                        offset(log(n_total_reports + 0.0001)),
-                      data = ma_df,
-                      prior = set_prior("cauchy(0,2.5)", class="b"),
-                      family = bernoulli(link = "logit"),
-                      iter = iteret,
-                      warmup = wup,
-                      chains = nchains,
-                      cores = nchains,
-                      backend = "cmdstanr",
-                      threads = threading(threads_per_chain),
-                      save_pars = save_pars(all = TRUE),
-                      control = list(adapt_delta = 0.99))
-saveRDS(mtiger2_ma_rep, file = paste0(loc.output, "mtiger2_ma_rep.rds"))
+                control = list(adapt_delta = 0.99))
+summary(mbites_6)
+loo(mbites_6)
+saveRDS(mbites_6, file = paste0(loc.output,"mbites_6.rds"))

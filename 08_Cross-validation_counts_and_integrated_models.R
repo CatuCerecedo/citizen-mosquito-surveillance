@@ -43,7 +43,7 @@ ggplot(tiger_integrating, aes(x = females > 0, y = log(ma))) +
 # BG MODELS---------------------------------------------------------------------
 # Split the data: train/test ---------------------------------------------------
 
-set.seed(12123)
+set.seed(121234)
 sample <- sample(c(TRUE, FALSE), nrow(tiger_integrating), replace=TRUE, prob=c(0.8, 0.2))
 train  <- tiger_integrating[sample, ]
 test   <- tiger_integrating[!sample, ]
@@ -54,6 +54,35 @@ threads_per_chain = 1
 iteret = 2500
 wup = 1000
 # Count model ---------------------------------------------------------------
+tiger <- readRDS(paste0(loc.output, "bg_tiger_spain_daily.rds")) 
+# tiger$year <- as.factor(lubridate::year(tiger$end_date))
+
+tiger <- tiger %>% 
+  drop_na(females) %>%
+  mutate(
+    # urban = artificial_green_urban + industrial_transport + urban_fabric,
+    y = as.factor(year(end_date)),
+    occu = case_when(
+      females > 0 ~ 1,
+      TRUE ~ 0),
+    FH = case_when(mean_relative_humidity < 40~0, mean_relative_humidity >95~0, 
+                   (mean_relative_humidity >=40 & mean_relative_humidity <= 95)~((mean_relative_humidity/55)-(40/55))),
+    FT = case_when(mean_temperature<=15~0, mean_temperature>30~0, (mean_temperature>15 & mean_temperature <=20)~(.2*mean_temperature)-3, (mean_temperature>20 & mean_temperature<=25)~1, (mean_temperature>25 & mean_temperature <= 30)~(-.2*mean_temperature)+6),
+    mwi = FH*FT,
+  ) %>%
+  filter(mean_relative_humidity < 101) # There is a wrong data --> ERA5 has no sense
+
+set.seed(121234)
+sample <- sample(c(TRUE, FALSE), nrow(tiger), replace=TRUE, prob=c(0.8, 0.2))
+train  <- tiger[sample, ]
+test   <- tiger[!sample, ]
+
+nchains = 4
+threads_per_chain = 1
+
+iteret = 5000
+wup = 2000
+
 mtiger16 <- brm(females ~ poly(l21mean_temperature, 2) + l21precipitation + 
                   offset(log(trapping_effort)) +
                   (1 | id) + (1 | y),
@@ -82,7 +111,7 @@ pp <- apply(posterior_predict(mtiger16,
 
 test$predicted <- pp$.
 
-ggplot(test, aes(x = predicted, y = females)) +
+ggplot(test, aes(x = predicted*100, y = females)) +
   geom_point() +
   # annotate("text", x = 110, y = 500, label = "y = -6.13 + 1.42x") +
   # annotate("text", x = 110, y = 400, label = "S = 0.63") +
@@ -136,7 +165,9 @@ ggplot(test, aes(x = predicted, y = females)) +
   geom_point() +
   # annotate("text", x = 110, y = 500, label = "y = -6.13 + 1.42x") +
   # annotate("text", x = 110, y = 400, label = "S = 0.63") +
-  geom_smooth(method = "lm") +
+  geom_smooth(method = "lm", color = "#abdda4") +
+  # geom_smooth(formula =  y ~ x, color = "#3288bd")+
+  ylim(c(0, 50)) +
   theme_bw() 
 summary(lm(I(females - 1) ~ predicted - 1, data = test))
 

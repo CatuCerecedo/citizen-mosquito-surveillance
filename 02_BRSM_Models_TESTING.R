@@ -722,3 +722,158 @@ mtiger4_ma_rep <- brm(any_reps ~ poly(mean_temperature, 2) +
                       threads = threading(threads_per_chain),
                       control = list(adapt_delta = 0.99))
 # saveRDS(mtiger4_ma_rep, file = paste0(loc.output, "mtiger4_ma_rep.rds"))
+
+# Bites models -----------------------------------------------------------------
+bites <- readRDS(file = paste0(loc.output, "bites_spain_daily.rds"))
+nchains = 4
+threads_per_chain = 1
+
+iteret = 400
+wup = 200
+
+# Following the variables selected by dredge and glmmTMB
+mbites_1 <- brm(any_reps ~ l21mean_relative_humidity + l21min_temperature + l21precipitation +
+                  agricultural + inland_wetlands + other_artificial + marine_water +
+                  inland_water + inland_water + cont_urban_fabric + sports_leisure +
+                        (1 | id) + (1 | y) + 
+                        offset(log(SE)),
+                      data = bites,
+                      prior = set_prior("cauchy(0,2.5)", class="b"),
+                      family = bernoulli(link = "logit"),
+                      iter = iteret,
+                      warmup = wup,
+                      chains = nchains,
+                      cores = nchains,
+                      backend = "cmdstanr",
+                      threads = threading(threads_per_chain),
+                      control = list(adapt_delta = 0.99))
+summary(mbites_1)
+saveRDS(mbites_1, file = paste0(loc.output, "testing_","mbites_1.rds"))
+
+mbites_1 <- brm(any_reps ~ l21mean_relative_humidity + l21min_temperature + l21precipitation +
+                  agricultural + inland_wetlands + other_artificial + marine_water +
+                  inland_water + inland_water + cont_urban_fabric + sports_leisure +
+                  (1 | id) + (1 | y) + 
+                  offset(log(SE)),
+                data = bites,
+                prior = set_prior("cauchy(0,2.5)", class="b"),
+                family = bernoulli(link = "logit"),
+                iter = iteret,
+                warmup = wup,
+                chains = nchains,
+                cores = nchains,
+                backend = "cmdstanr",
+                threads = threading(threads_per_chain),
+                control = list(adapt_delta = 0.99))
+summary(mbites_1)
+loo(mbites_1)
+saveRDS(mbites_1, file = paste0(loc.output, "testing_","mbites_1.rds"))
+
+mbites_2 <- brm(any_reps ~ poly(l21min_temperature, 2) +
+                  agricultural + other_artificial + marine_water +
+                  inland_water + inland_water + cont_urban_fabric + sports_leisure +
+                  (1 | id) + (1 | y) + 
+                  offset(log(SE)),
+                data = bites,
+                prior = set_prior("cauchy(0,2.5)", class="b"),
+                family = bernoulli(link = "logit"),
+                iter = iteret,
+                warmup = wup,
+                chains = nchains,
+                cores = nchains,
+                backend = "cmdstanr",
+                threads = threading(threads_per_chain),
+                control = list(adapt_delta = 0.99))
+summary(mbites_2)
+loo(mbites_2)
+saveRDS(mbites_2, file = paste0(loc.output, "testing_","mbites_2.rds"))
+
+mbites_3 <- brm(any_reps ~ poly(l21min_temperature, 2) +
+                  agricultural + other_artificial +
+                  (1 | id) + (1 | y) + 
+                  offset(log(SE)),
+                data = bites,
+                prior = set_prior("cauchy(0,2.5)", class="b"),
+                family = bernoulli(link = "logit"),
+                iter = iteret,
+                warmup = wup,
+                chains = nchains,
+                cores = nchains,
+                backend = "cmdstanr",
+                threads = threading(threads_per_chain),
+                control = list(adapt_delta = 0.99))
+summary(mbites_3)
+loo(mbites_3)
+saveRDS(mbites_3, file = paste0(loc.output, "testing_","mbites_3.rds"))
+
+mbites_4 <- brm(any_reps ~ l21mean_relative_humidity + l21min_temperature + l21precipitation +
+                  agricultural + other_artificial +
+                  (1 | id) + (1 | y) + 
+                  offset(log(SE)),
+                data = bites,
+                prior = set_prior("cauchy(0,2.5)", class="b"),
+                family = bernoulli(link = "logit"),
+                iter = iteret,
+                warmup = wup,
+                chains = nchains,
+                cores = nchains,
+                backend = "cmdstanr",
+                threads = threading(threads_per_chain),
+                control = list(adapt_delta = 0.99))
+summary(mbites_4)
+loo(mbites_4)
+saveRDS(mbites_4, file = paste0(loc.output, "testing_","mbites_4.rds"))
+
+mbites_5 <- brm(any_reps ~ l21mean_relative_humidity + poly(l21min_temperature, 2) + 
+                  agricultural + other_artificial +
+                  (1 | id) + (1 | y) + 
+                  offset(log(SE)),
+                data = bites,
+                prior = set_prior("cauchy(0,2.5)", class="b"),
+                family = bernoulli(link = "logit"),
+                iter = iteret,
+                warmup = wup,
+                chains = nchains,
+                cores = nchains,
+                backend = "cmdstanr",
+                threads = threading(threads_per_chain),
+                control = list(adapt_delta = 0.99))
+summary(mbites_5)
+loo(mbites_5)
+saveRDS(mbites_5, file = paste0(loc.output, "testing_","mbites_5.rds"))
+
+mbites_6 <- brm(any_reps ~ poly(l21min_temperature, 2) + 
+                  agricultural + other_artificial + green_urban + discont_urban_fabric +
+                  (1 | id) + (1 | y) + 
+                  offset(log(SE)),
+                data = bites,
+                prior = set_prior("cauchy(0,2.5)", class="b"),
+                family = bernoulli(link = "logit"),
+                iter = iteret,
+                warmup = wup,
+                chains = nchains,
+                cores = nchains,
+                backend = "cmdstanr",
+                threads = threading(threads_per_chain),
+                control = list(adapt_delta = 0.99))
+summary(mbites_6)
+loo(mbites_6)
+saveRDS(mbites_6, file = paste0(loc.output, "testing_","mbites_6.rds"))
+
+mbites_7 <- brm(any_reps ~ poly(l21min_temperature, 2) + 
+                  agricultural + other_artificial + discont_urban_fabric +
+                  (1 | id) + (1 | y) + 
+                  offset(log(SE)),
+                data = bites,
+                prior = set_prior("cauchy(0,2.5)", class="b"),
+                family = bernoulli(link = "logit"),
+                iter = iteret,
+                warmup = wup,
+                chains = nchains,
+                cores = nchains,
+                backend = "cmdstanr",
+                threads = threading(threads_per_chain),
+                control = list(adapt_delta = 0.99))
+summary(mbites_7)
+loo(mbites_7)
+saveRDS(mbites_7, file = paste0(loc.output, "testing_","mbites_7.rds"))
