@@ -24,14 +24,13 @@ cmdstan_version()
 
 rm(list = ls())
 # Directories ------------------------------------------------------------------
+# In local
+loc.output <- paste0(getwd(), "/OUTPUT/")
+loc.data <- paste0(getwd(), "/DATA/")
 
 # In Cluster
 loc.output <- paste0(getwd(), "/Spain_Tiger/OUTPUT/")
 loc.data <- paste0(getwd(), "/Spain_Tiger/DATA/")
-
-# In local
-loc.output <- paste0(getwd(), "/OUTPUT/")
-loc.data <- paste0(getwd(), "/DATA/")
 
 # Loading ---------------------------------------------------------------------
 # Count data
