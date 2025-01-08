@@ -177,6 +177,6 @@ mbites_6 <- brm(any_reps ~ poly(l21min_temperature, 2) +
                 backend = "cmdstanr",
                 threads = threading(threads_per_chain),
                 control = list(adapt_delta = 0.99))
+saveRDS(mbites_6, file = paste0(loc.output,"mbites_6.rds"))
 summary(mbites_6)
 loo(mbites_6)
-saveRDS(mbites_6, file = paste0(loc.output,"mbites_6.rds"))
