@@ -163,7 +163,13 @@ wup = 2000
 
 bites <- readRDS(file = paste0(loc.output, "bites_spain_daily.rds"))
 
-mbites_6 <- brm(any_reps ~ poly(l21min_temperature, 2) + 
+# Reduce he number of FALSE
+bites_t <- bites %>% filter(any_reps == TRUE)
+bites_f <- bites %>% filter(any_reps == FALSE) %>% sample_n(8000)
+
+bites <- rbind(bites_t, bites_f)
+
+mbites_6_reduce <- brm(any_reps ~ poly(l21min_temperature, 2) + 
                   agricultural + other_artificial + green_urban + discont_urban_fabric +
                   (1 | id) + (1 | y) + 
                   offset(log(SE)),
@@ -177,6 +183,6 @@ mbites_6 <- brm(any_reps ~ poly(l21min_temperature, 2) +
                 backend = "cmdstanr",
                 threads = threading(threads_per_chain),
                 control = list(adapt_delta = 0.99))
-saveRDS(mbites_6, file = paste0(loc.output,"mbites_6.rds"))
-summary(mbites_6)
-loo(mbites_6)
+saveRDS(mbites_6_reduce, file = paste0(loc.output,"mbites_6_reduce.rds"))
+summary(mbites_6_reduce)
+loo(mbites_6_reduce)
