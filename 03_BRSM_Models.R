@@ -169,6 +169,25 @@ bites_f <- bites %>% filter(any_reps == FALSE) %>% sample_n(8000)
 
 bites <- rbind(bites_t, bites_f)
 
+mbites_7_reduce <- brm(any_reps ~ poly(l21min_temperature, 2) + 
+                         agricultural + other_artificial  + discont_urban_fabric +
+                         (1 | id) + (1 | y) + 
+                         offset(log(SE)),
+                       data = bites,
+                       prior = set_prior("cauchy(0,2.5)", class="b"),
+                       family = bernoulli(link = "logit"),
+                       iter = iteret,
+                       warmup = wup,
+                       chains = nchains,
+                       cores = nchains,
+                       backend = "cmdstanr",
+                       threads = threading(threads_per_chain),
+                       save_pars = save_pars(all = TRUE),
+                       control = list(adapt_delta = 0.99))
+saveRDS(mbites_7_reduce, file = paste0(loc.output,"mbites_7_reduce.rds"))
+summary(mbites_7_reduce)
+loo(mbites_7_reduce)
+
 mbites_6_reduce <- brm(any_reps ~ poly(l21min_temperature, 2) + 
                   agricultural + other_artificial + green_urban + discont_urban_fabric +
                   (1 | id) + (1 | y) + 
@@ -182,6 +201,7 @@ mbites_6_reduce <- brm(any_reps ~ poly(l21min_temperature, 2) +
                 cores = nchains,
                 backend = "cmdstanr",
                 threads = threading(threads_per_chain),
+                save_pars = save_pars(all = TRUE),
                 control = list(adapt_delta = 0.99))
 saveRDS(mbites_6_reduce, file = paste0(loc.output,"mbites_6_reduce.rds"))
 summary(mbites_6_reduce)
