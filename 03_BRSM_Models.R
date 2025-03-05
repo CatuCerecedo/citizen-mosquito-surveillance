@@ -83,7 +83,7 @@ wup = 2000
 # Only when you are working in local
 # Sys.setenv(PATH = "C:/Users/Catu/Documents/.cmdstan/cmdstan-2.31.0/stan/lib/stan_math/lib/tbb")
 
-# mtiger16 <- brm(females ~ poly(l21mean_temperature, 2) + l21precipitation + 
+# mtiger16 <- brm(females ~ poly(l21mean_temperature, 2) + l21precipitation +
 #                   offset(log(trapping_effort)) +
 #                   (1 | id) + (1 | y),
 #                 data = tiger,

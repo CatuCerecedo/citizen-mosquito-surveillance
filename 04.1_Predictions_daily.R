@@ -25,8 +25,8 @@ loc.era5 <- paste0(getwd(), "/EU_Culex/ERA5_Download/")
 
 sf::sf_use_s2(FALSE)
 
-mdl <- "mtiger16.rds"
-mdl_name <- "/mtiger16"
+mdl <- "mtiger18.rds"
+mdl_name <- "/mtiger18"
 fldr <- "Counts"
 sub <- "" # with _
 
@@ -51,7 +51,7 @@ xy <- st_centroid(spain) %>%
 clc_surface <- readRDS(paste0(loc.output, "clc_surface_mun_level_0.rds"))
 
 # NC to raster and extraction --------------------------------------------------
-ncores = 1
+ncores = 8
 
 new_points <- xy
 
@@ -140,6 +140,16 @@ for (year in c("2020", "2021", "2022")){
             ) %>%
             dplyr::select(l21mean_temperature)
           
+          values_t2m_21_min <-  raster::calc(tmp_raster_day_delay, fun = function(x) {
+            min(x, na.rm = TRUE)
+          }) %>%
+            raster::extract(., new_points) %>%
+            as.data.frame() %>%
+            mutate(
+              l21min_temperature = . - 273.15 # Our should be in degrees Celsius
+            ) %>%
+            dplyr::select(l21min_temperature)
+          
           # Precipitation ------------------------------------------------------------------
           # The tmp raster is a rasterBrick with a lot of layers
           tmp_raster <- raster::brick(ncfname, varname=c("tp"))
@@ -198,6 +208,7 @@ for (year in c("2020", "2021", "2022")){
           prep_data_day <- new_points %>% mutate(
             mean_temperature = values_t2m$mean_temperature,
             l21mean_temperature = values_t2m_21$l21mean_temperature,
+            l21min_temperature = values_t2m_21_min$l21min_temperature,
             precipitation = values_tp$precipitation,
             l21precipitation = values_tp_21$l21precipitation,
             dew_point = values_dp$dew_point,

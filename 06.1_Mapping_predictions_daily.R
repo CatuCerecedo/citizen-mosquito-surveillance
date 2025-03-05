@@ -23,10 +23,30 @@ loc.era5 <- "/home/catuxa/Documents/Mosquito_Models/EU_tiger/ERA5_Download/"
 
 sf::sf_use_s2(FALSE)
 
-mdl <- "mtiger3_occu"
-mdl_name <- "/mtiger3_occu"
-fldr <- "Suitability"
-sub <- "_occu" # with _
+mdl <- "mtiger16"
+mdl_name <- "/mtiger16"
+fldr <- "Counts"
+sub <- "" # with _
+
+# mdl <- "mtiger3_occu"
+# mdl_name <- "/mtiger3_occu"
+# fldr <- "Suitability"
+# sub <- "_occu" # with _
+
+# mdl <- "mtiger7_ma"
+# mdl_name <- "/mtiger7_ma"
+# fldr <- "MA"
+# sub <- "_ma" # with _
+
+# mdl <- "mbites_7_reduce"
+# mdl_name <- "/mbites_7_reduce"
+# fldr <- "Bites"
+# sub <- "bts" # with _
+
+fldr <- "Monthly_Integration"
+mdl_name <- "/tiger_inte"
+mdl <- "tiger_inte"
+sub <- "" # with _
 
 # Some checks ------------------------------------------------------------------
 # Mapping climatic variables
@@ -148,9 +168,10 @@ rm(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12)
 bg_pred <- ggpubr::ggarrange(a4, a11, common.legend = TRUE, nrow = 1, ncol = 2, legend = "right")
 suit_pred <- ggpubr::ggarrange(a4, a11, common.legend = TRUE, nrow = 1, ncol = 2, legend = "right")
 ma_pred <- ggpubr::ggarrange(a4, a11, common.legend = TRUE, nrow = 1, ncol = 2, legend = "right")
+bite_pred <- ggpubr::ggarrange(a4, a11, common.legend = TRUE, nrow = 1, ncol = 2, legend = "right")
 
-ggpubr::ggarrange(suit_pred, bg_pred, ma_pred,
-                  nrow = 3, ncol = 1)
+ggpubr::ggarrange(suit_pred, bg_pred, ma_pred, bite_pred,
+                  nrow = 4, ncol = 1)
 ggsave(file = paste0(loc.fig, "predicted_plot_Spain.png"), 
        units = "cm", height = 25, width = 25, bg = "white")
 
@@ -167,6 +188,11 @@ for(y in years){
   # pred_bg_all <- readRDS(paste0(loc.output, "PREDICTIONS/Suitability/mtiger3_occu/tiger_", "07" ,"_", y, "_occu.rds")) %>%
   #   janitor::clean_names() %>%
   #   dplyr::select(municipality, id, lon, lat, prov_name)
+  # Bites
+  # pred_bg_all <- readRDS(paste0(loc.output, "PREDICTIONS/Bites/mbites_7_reduce/tiger_", "07" ,"_", y, "bts.rds")) %>%
+  #   janitor::clean_names() %>%
+  #   dplyr::select(municipality, id, lon, lat, prov_name)
+  
   pred_ma_all <- readRDS(paste0(loc.output, "PREDICTIONS/MA/mtiger7_ma/tiger_", "07" ,"_", y, "_ma.rds")) %>%
     janitor::clean_names() %>%
     dplyr::select(municipality, id, lon, lat, prov_name)
@@ -179,6 +205,10 @@ for(y in years){
       st_drop_geometry()
     # Si quiero plotear la correlación con suitability
     # pred_bg <- readRDS(paste0(loc.output, "PREDICTIONS/Suitability/mtiger3_occu/tiger_", m ,"_", y, "_occu.rds")) %>%
+    #   janitor::clean_names() %>%
+    #   st_drop_geometry()
+    # Bites
+    # pred_bg <- readRDS(paste0(loc.output, "PREDICTIONS/Bites/mbites_7_reduce/tiger_", m ,"_", y, "bts.rds")) %>%
     #   janitor::clean_names() %>%
     #   st_drop_geometry()
     pred_bg$pred_count <- rowMeans(pred_bg[,6:ncol(pred_bg)], na.rm = TRUE)
@@ -224,36 +254,43 @@ df <- merge(spatial_corr[["2020"]], spain, by = c("municipality", "id"))
 st_geometry(df) <- "geometry"
 a <- ggplot() +
   geom_sf(data = df, aes(fill = rho), color = "transparent", size = 1) +
-  scale_fill_distiller("", palette = "Spectral") + 
+  scale_fill_distiller("", palette = "Spectral", limits = c(0.7, 1)) + 
   ggtitle("2020") +
-  theme_classic()
+  theme_classic() +
+  theme(plot.margin = margin(t = 0, r = 0, b = 0, l = 0))
+print(mean(df$rho, na.rm = TRUE))
+print(sd(df$rho, na.rm = TRUE))
 
 df <- merge(spatial_corr[["2021"]], spain, by = c("municipality", "id"))
 st_geometry(df) <- "geometry"
 b <-  ggplot() +
   geom_sf(data = df, aes(fill = rho), color = "transparent", size = 1) +
-  scale_fill_distiller("", palette = "Spectral") + 
+  scale_fill_distiller("", palette = "Spectral", limits = c(0.7, 1)) + 
   ggtitle("2021") +
-  theme_classic()
+  theme_classic() +
+  theme(plot.margin = margin(t = 0, r = 0, b = 0, l = 0))
+print(mean(df$rho, na.rm = TRUE))
+print(sd(df$rho, na.rm = TRUE))
 
 df <- merge(spatial_corr[["2022"]], spain, by = c("municipality", "id"))
 st_geometry(df) <- "geometry"
 c <- ggplot() +
   geom_sf(data = df, aes(fill = rho), color = "transparent", size = 1) +
-  scale_fill_distiller("", palette = "Spectral", limits = c(0.3, 1)) + 
+  scale_fill_distiller("", palette = "Spectral", limits = c(0.7, 1)) + 
   ggtitle("2022") +
   theme_classic() +
+  theme(plot.margin = margin(t = 0, r = 0, b = 0, l = 0))
+print(mean(df$rho, na.rm = TRUE))
+print(sd(df$rho, na.rm = TRUE))
+
+p <- ggpubr::ggarrange(a, b, c,
+                  common.legend = TRUE, nrow = 1, ncol = 3, legend = "right")
+bg_ma <- ggdraw(p) +
   theme(
-    # legend.position = "bottom",    # La leyenda se posiciona abajo
-    legend.title = element_text(size = 22, face = "bold"),
-    legend.text = element_text(size = 20),
-    plot.title = element_text(hjust = 0.5, size = 22, face = "bold"),
-    axis.title = element_text(size = 22),
-    axis.text = element_text(size = 19),
+    plot.margin = margin(t = 3, r = 10, b = 3, l = 10), 
+    plot.background = element_rect(color = "black", linewidth = 2, fill = "white") 
   )
 
-ggpubr::ggarrange(a, b, c,
-                  common.legend = TRUE, nrow = 1, ncol = 3, legend = "right")
 ggsave(file = paste0(loc.fig, "spatial_correlation_bg_ma_Spain.png"), 
        units = "cm", height = 10, width = 20, bg = "white")
 
@@ -284,12 +321,19 @@ for(y in years){
     pred_ma$ma <- rowMeans(pred_ma[,6:ncol(pred_ma)], na.rm = TRUE)
     pred_ma <- pred_ma %>% dplyr::select(municipality, id, lon, lat, prov_name, ma)
     # pred_ma <- pred_ma %>% filter((pixel_id %in% tiger$pixel_id))
+    pred_bites <- readRDS(paste0(loc.output, "PREDICTIONS/Bites/mbites_7_reduce/tiger_", m ,"_", y, "bts.rds")) %>%
+      janitor::clean_names() %>%
+      st_drop_geometry()
+    pred_bites$bites <- rowMeans(pred_bites[,6:ncol(pred_bites)], na.rm = TRUE)
+    pred_bites <- pred_bites %>% dplyr::select(municipality, id, lon, lat, prov_name, bites)
+    # pred_bites <- pred_bites %>% filter((pixel_id %in% tiger$pixel_id))
     
     # Joining tables
     pred <- merge(pred_bg, pred_suit, by = c("municipality", "id", "lon", "lat", "prov_name"))
     pred <- merge(pred, pred_ma, by = c("municipality", "id", "lon", "lat", "prov_name"))
+    pred <- merge(pred, pred_bites, by = c("municipality", "id", "lon", "lat", "prov_name"))
     
-    rm(pred_bg, pred_suit, pred_ma)
+    rm(pred_bg, pred_suit, pred_ma, pred_bites)
     
     cor_row <- data.frame(
       year = y,
@@ -298,8 +342,14 @@ for(y in years){
       count_suit_p = cor.test(pred$bg, pred$suit, method="spearman")$p.value,
       count_ma = as.numeric(cor.test(pred$bg, pred$ma, method="spearman")$estimate),
       count_ma_p = cor.test(pred$bg, pred$ma, method="spearman")$p.value,
+      count_bites = as.numeric(cor.test(pred$bg, pred$bites, method="spearman")$estimate),
+      count_bites_p = cor.test(pred$bg, pred$bites, method="spearman")$p.value,
       suit_ma = as.numeric(cor.test(pred$suit, pred$ma, method="spearman")$estimate),
-      suit_ma_p = cor.test(pred$suit, pred$ma, method="spearman")$p.value
+      suit_ma_p = cor.test(pred$suit, pred$ma, method="spearman")$p.value,
+      suit_bites = as.numeric(cor.test(pred$suit, pred$bites, method="spearman")$estimate),
+      suit_bites_p = cor.test(pred$suit, pred$bites, method="spearman")$p.value,
+      bites_ma = as.numeric(cor.test(pred$ma, pred$bites, method="spearman")$estimate),
+      bites_ma_p = cor.test(pred$ma, pred$bites, method="spearman")$p.value
     )
     cor_predictions <- rbind(cor_predictions, cor_row)
   }
@@ -307,7 +357,7 @@ for(y in years){
 
 cor_predictions <- tidyr::pivot_longer(
   cor_predictions,
-  cols = c(count_suit, count_ma, suit_ma),
+  cols = c(count_suit, count_ma, count_bites, suit_ma, suit_bites, bites_ma),
   names_to = "comparison",
   values_to = "value"
 )
@@ -315,7 +365,7 @@ cor_predictions <- tidyr::pivot_longer(
 saveRDS(cor_predictions, file = paste0(loc.output, "temporal_corr.rds"))
 
 # Define una paleta de colores personalizada
-custom_colors <- c("count_suit" = "#abdda4", "count_ma" = "#d53e4f", "suit_ma" = "#3288bd")
+custom_colors <- c("suit_ma" = "#abdda4", "count_ma" = "#d53e4f", "bites_ma" = "#3288bd")
 
 # # the mean annual values
 # mean_values <- cor_predictions %>%
@@ -325,17 +375,17 @@ custom_colors <- c("count_suit" = "#abdda4", "count_ma" = "#d53e4f", "suit_ma" =
 ggplot(cor_predictions, aes(x = month, y = value, color = comparison, shape = comparison, linetype = comparison)) +
   geom_point(size = 7, alpha = 0.6) +
   geom_line(size = 2, alpha = 0.6) +
-  geom_hline(yintercept = 0, linetype = "dashed") +
+  # geom_hline(yintercept = 0, linetype = "dashed") +
   scale_color_manual(values = custom_colors) +
-  scale_shape_manual(values = c("count_suit" = 15, "count_ma" = 16, "suit_ma" = 17)) +
-  scale_linetype_manual(values = c("count_suit" = 5, "count_ma" = 1, "suit_ma" = 10)) +
+  scale_shape_manual(values = c("suit_ma" = 15, "count_ma" = 16, "bites_ma" = 17)) +
+  scale_linetype_manual(values = c("suit_ma" = "dashed", "count_ma" = "solid", "bites_ma" = "dotdash")) +
   labs(
     y = "Spearman Correlation (S)",
     x = "Month",
     color = "Comparison",      # Aquí se especifica "Comparison" para la leyenda unificada
     shape = "Comparison",      # Se especifica también para shape
     linetype = "Comparison",   # Y para linetype
-    title = "Spanish Tiger Mosquito Models: Spatial correlation over time"
+    # title = "Spanish Tiger Mosquito Models: Spatial correlation over time"
   ) +
   scale_x_continuous(breaks = seq(1, 12, 1)) +
   scale_y_continuous(breaks = seq(-0.5, 0.9, 0.2)) +

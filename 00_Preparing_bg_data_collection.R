@@ -18,12 +18,15 @@ library(readxl)
 library(units)
 library(data.table)
 library(sf)
+library(ggplot2)
+library(mapSpain)
 
 rm(list = ls())
 # Directories ------------------------------------------------------------------
 
 loc.output <- paste0(getwd(), "/OUTPUT/")
 loc.data <- paste0(getwd(), "/DATA/")
+loc.fig <- paste0(getwd(), "/FIGURES/")
 
 # Girona -----------------------------------------------------------------------
 
@@ -437,10 +440,5 @@ rm(gi_202, bcn_2020, bcn_2021, bcn_2021b, bcn_2022, cb, mb, mg, db, ir, sd, pa, 
 
 bg_traps <- bg_traps %>%
   drop_na(start_date, end_date)
-
-# Saving the dataframe for the modeling process --------------------------------
-saveRDS(bg_traps, file = paste0(loc.output, "bg_traps_spain_2020_2022.rds"))
-
-
 
 
