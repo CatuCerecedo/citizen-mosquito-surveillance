@@ -41,7 +41,7 @@ sub_ma <- "_ma" # with _
 
 decor_time <- list()
 decor_time[[1]] <-  c("2020", "2021", "2022")
-decor_time[[2]] <- list(list("07", "08"), list("08", "09"), list("07", "08"))
+decor_time[[2]] <- list(list("07", "08", "09"), list("08", "09"), list("06", "07", "08", "09"))
 
 # Load files -------------------------------------------------------------------
 spain <- readRDS(paste0(loc.output, "spain_mun.rds")) %>%
@@ -83,6 +83,10 @@ a <- ggplot() +
           size = 0.01, alpha = 0.8, na.rm = TRUE) +
   scale_fill_distiller("", palette = "Spectral", na.value = "transparent") + 
   ggtitle(paste(fldr, "- Decorrelation")) +
+  labs(
+    x = "Longitude",
+    y = "Latitude"
+  ) +
   theme_classic()
 
 
@@ -119,6 +123,10 @@ b <- ggplot() +
           size = 0.01, alpha = 0.8, na.rm = TRUE) +
   scale_fill_distiller("", palette = "Spectral", na.value = "transparent") + 
   ggtitle(paste(fldr_ma, "- Decorrelation")) +
+  labs(
+    x = "Longitude",
+    y = "Latitude"
+  ) +
   theme_classic()
 
 # Rank ordering convertion -----------------------------------------------------
@@ -134,15 +142,17 @@ pred_ma$pred_count_rnk <- rank_order_conversion(pred_ma$pred_count)
 c <- ggplot() +
   geom_sf(data = pred, aes(fill = pred_count_rnk), color = "transparent",
           size = 0.01, alpha = 0.8, na.rm = TRUE) +
-  scale_fill_distiller("", palette = "Spectral", na.value = "transparent") + 
-  ggtitle(paste(fldr, "- Decorrelation")) +
+  scale_fill_distiller("", palette = "Spectral", na.value = "transparent") +
+  # ggtitle(paste(fldr, "- Decorrelation")) +
+  # ggtitle("COUNT ranked predictions") +
   theme_classic()
 
 d <- ggplot() +
   geom_sf(data = pred_ma, aes(fill = pred_count_rnk), color = "transparent",
           size = 0.01, alpha = 0.8, na.rm = TRUE) +
   scale_fill_distiller("", palette = "Spectral", na.value = "transparent") + 
-  ggtitle(paste(fldr_ma, "- Decorrelation")) +
+  # ggtitle(paste(fldr_ma, "- Decorrelation")) +
+  # ggtitle("CITSI ranked predictions") +
   theme_classic()
 
 ggpubr::ggarrange(a, b, c, d)
@@ -161,15 +171,17 @@ diff_pred <- merge(pred, pred_ma %>% st_drop_geometry(),
                    )
 
 diff_pred$pred_rnk_diff <- diff_pred$pred_ma_rnk - diff_pred$pred_count_rnk
+# saveRDS(diff_pred, file = paste0(loc.output, "diff_pred_ranked.rds"))
 
 diff_rank_plot <- ggplot() +
   geom_sf(data = diff_pred, aes(fill = pred_rnk_diff), color = "transparent",
           size = 0.01, alpha = 0.8, na.rm = TRUE) +
   scale_fill_distiller("", palette = "Spectral", na.value = "transparent", limits = c(-1, 1)) + 
-  ggtitle(paste(fldr_ma, "-", fldr)) +
+  # ggtitle(paste(fldr_ma, "-", fldr)) +
+  # ggtitle(paste("COUNT", "-", "CITSI")) +
   theme_classic()
 
-ggpubr::ggarrange(c, d, diff_rank_plot, nrow = 1)
+ggpubr::ggarrange(c, d, diff_rank_plot, nrow = 1, labels = c("A)", "B)", "C)"), vjust = 28)
 ggsave(paste0(loc.fig, "Spatial_clusters/period_diff_ranked_", fldr, "_", fldr_ma, "_", period, ".png"),
        width = 25,  height = 25, units = "cm", bg = "white")
 

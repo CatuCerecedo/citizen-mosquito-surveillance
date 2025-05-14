@@ -1,5 +1,4 @@
 ###################### Preparing Mosquito Alert Data ###########################
-
 library(tidyverse)
 library(sf)
 library(terra)
@@ -8,7 +7,6 @@ library(data.table)
 
 rm(list = ls())
 # Directories ------------------------------------------------------------------
-
 # In local
 loc.output <- paste0(getwd(), "/OUTPUT/")
 loc.data <- paste0(getwd(), "/DATA/")
@@ -42,7 +40,7 @@ ggplot() +
           size = 0.01, alpha = 0.8, na.rm = TRUE) 
 
 # Download Sampling effort data -----------------------------------------------
-trs_daily <- data.table::fread("https://github.com/Mosquito-Alert/sampling_effort_data/raw/main/sampling_effort_daily_cellres_025.csv.gz") %>%
+trs_daily <- read_csv("https://github.com/Mosquito-Alert/sampling_effort_data/raw/main/sampling_effort_daily_cellres_025.csv.gz") %>%
   as_tibble() %>%
   mutate(
     date = as_date(date),
@@ -93,6 +91,16 @@ trs_daily = trs_daily %>%
   ) %>%
   ungroup() # n = 42306
 st_geometry(trs_daily) <- "geometry"
+
+trs_random <- trs_daily %>% 
+  mutate(
+    date =  sample(seq(as.Date("2020-01-01"), as.Date("2022-12-31"), by = "day"), 
+                   nrow(trs_daily), replace = TRUE),
+    id = sample(spain$id, nrow(trs_daily), replace = TRUE),
+    municipality = sample(spain$municipality, nrow(trs_daily), replace = TRUE)
+    ) %>% # random dates and SE
+  st_drop_geometry()
+trs_random <- merge(trs_random, spain %>% dplyr::select(id), by = "id")
 
 # Checking SE selection
 # ggplot() +
@@ -158,6 +166,17 @@ ma_df = trs_daily %>%
   ) %>% 
   mutate(SE_log_odds = log( (SE+.0001)/(1-SE+.0001))) # 42025
 
+ma_df = trs_random %>%
+  left_join(vrs_full, by = c("municipality", "id", "date")) %>%
+  replace_na(list(n_target_reps=0)) %>%
+  filter(SE>0) %>%
+  mutate(
+    any_reps = n_target_reps > 0,
+    reps_per_SEev = n_target_reps/(SEev),
+    rep_per_reporter = n_total_reports/n_total_reporters
+  ) %>%
+  mutate(SE_log_odds = log( (SE+.0001)/(1-SE+.0001))) # 42025
+
 # adding app phase 
 # app_phases = tibble(app_phase = paste0("p", 1:7), 
 #                     date = c(as_date("2014-06-01"), 
@@ -186,28 +205,30 @@ ma_df <-  ma_df %>% mutate(
   )
 
 # Adding other information -----------------------------------------------------
-# # Extracting climatic variables from nc raster ---------------------------------
-# centroids <- st_centroid(ma_df) %>% 
-#   mutate(longitude = st_coordinates(.)[,1], latitude = st_coordinates(.)[,2]) %>% 
+# Extracting climatic variables from nc raster ---------------------------------
+# centroids <- st_centroid(ma_df) %>%
+#   mutate(longitude = st_coordinates(.)[,1], latitude = st_coordinates(.)[,2]) %>%
 #   st_drop_geometry() %>%
 #   st_as_sf(coords = c("longitude", "latitude"), crs = 4326, remove = FALSE)
-# # plot(st_geometry(centoids))
+# plot(st_geometry(centoids))
 
 # Full function ----------------------------------------------------------------
 # Loading the functions
 # In local
 # source("read_and_extract_grib_data.R")
-# In cluster
-# source("/home/usuaris/ccerecedo/EU_Culex/read_and_extract_grib_data.R")
+
 
 # In local
 source("read_and_extract_nc_data_daily.R")
+# In cluster
+source("/home/usuaris/ccerecedo/Spain_Tiger/read_and_extract_nc_data_daily.R")
 
 ma_df <- ma_df %>%
   mutate(
     start_date = date,
     end_date = date
   )
+st_geometry(ma_df) <- "geometry"
 
 # In cluster
 # source("/home/usuaris/ccerecedo/EU_Culex/read_and_extract_grib_data.R")
@@ -227,7 +248,8 @@ weather_data <- mclapply(1:nrow(ma_df), function(i){
 
 ma_wth <- do.call(rbind, weather_data) 
 
-saveRDS(ma_wth, file = paste0(loc.output, "ma_tiger_spain_climatic_variables_pixel_daily.rds"))
+# saveRDS(ma_wth, file = paste0(loc.output, "ma_tiger_spain_climatic_variables_pixel_daily.rds"))
+saveRDS(ma_wth, file = paste0(loc.output, "ma_tiger_spain_random.rds"))
 
 # Adding Corine Land Covers ---------------------------------------------------
 clc_surface <- readRDS(paste0(loc.output, "clc_surface_mun_level_0.rds"))
@@ -235,7 +257,7 @@ clc_surface <- readRDS(paste0(loc.output, "clc_surface_mun_level_0.rds"))
 ma <- merge(ma_wth, clc_surface, by = c("municipality", "id"), all.x = TRUE) # N = 12566 // 42025
 ma$no_data <- NULL
 
-saveRDS(ma, file = paste0(loc.output, "ma_tiger_spain_daily.rds"))
+saveRDS(ma, file = paste0(loc.output, "ma_tiger_spain_daily_random.rds"))
 
 # Adding population density ----------------------------------------------------
 ma <- ma %>% mutate(y = as.factor(year(end_date)))

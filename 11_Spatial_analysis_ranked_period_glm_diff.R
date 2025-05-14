@@ -182,9 +182,9 @@ summary(diff_table_wth)
 diff_table_wth <- diff_table_wth %>%
   mutate(
     decorrelation = as.factor(case_when(
-      year == "2020" & month %in% c("07", "08") ~ TRUE,
+      year == "2020" & month %in% c("07", "08", "09") ~ TRUE,
       year == "2021" & month %in% c("08", "09") ~ TRUE,
-      year == "2022" & month %in% c("07", "08") ~ TRUE,
+      year == "2022" & month %in% c("06", "07", "08", "09") ~ TRUE,
       .default = FALSE
     ))
   )

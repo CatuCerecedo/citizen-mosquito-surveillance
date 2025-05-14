@@ -33,10 +33,10 @@ sub <- "" # with _
 # fldr <- "Suitability"
 # sub <- "_occu" # with _
 
-# mdl <- "mtiger7_ma"
-# mdl_name <- "/mtiger7_ma"
-# fldr <- "MA"
-# sub <- "_ma" # with _
+mdl <- "mtiger7_ma"
+mdl_name <- "/mtiger7_ma"
+fldr <- "MA"
+sub <- "_ma" # with _
 
 # mdl <- "mbites_7_reduce"
 # mdl_name <- "/mbites_7_reduce"
@@ -101,7 +101,7 @@ for(y in years){
       # xlim(-13, 5) +
       # ylim(34, 44) +
       ggtitle(paste0(m, "-", y)) +
-      theme_classic()
+      theme_classic(base_size = 8, base_family = "Helvetica")
     
     tiger_maps[[iter]] <- plt
     month_values[[iter]] <- pred$pred_count %>% st_drop_geometry()
@@ -255,8 +255,7 @@ st_geometry(df) <- "geometry"
 a <- ggplot() +
   geom_sf(data = df, aes(fill = rho), color = "transparent", size = 1) +
   scale_fill_distiller("", palette = "Spectral", limits = c(0.7, 1)) + 
-  ggtitle("2020") +
-  theme_classic() +
+  theme_classic(base_size = 8, base_family = "Helvetica") +
   theme(plot.margin = margin(t = 0, r = 0, b = 0, l = 0))
 print(mean(df$rho, na.rm = TRUE))
 print(sd(df$rho, na.rm = TRUE))
@@ -266,8 +265,7 @@ st_geometry(df) <- "geometry"
 b <-  ggplot() +
   geom_sf(data = df, aes(fill = rho), color = "transparent", size = 1) +
   scale_fill_distiller("", palette = "Spectral", limits = c(0.7, 1)) + 
-  ggtitle("2021") +
-  theme_classic() +
+  theme_classic(base_size = 8, base_family = "Helvetica") +
   theme(plot.margin = margin(t = 0, r = 0, b = 0, l = 0))
 print(mean(df$rho, na.rm = TRUE))
 print(sd(df$rho, na.rm = TRUE))
@@ -277,22 +275,72 @@ st_geometry(df) <- "geometry"
 c <- ggplot() +
   geom_sf(data = df, aes(fill = rho), color = "transparent", size = 1) +
   scale_fill_distiller("", palette = "Spectral", limits = c(0.7, 1)) + 
-  ggtitle("2022") +
-  theme_classic() +
+  theme_classic(base_size = 8, base_family = "Helvetica") +
   theme(plot.margin = margin(t = 0, r = 0, b = 0, l = 0))
 print(mean(df$rho, na.rm = TRUE))
 print(sd(df$rho, na.rm = TRUE))
 
 p <- ggpubr::ggarrange(a, b, c,
                   common.legend = TRUE, nrow = 1, ncol = 3, legend = "right")
+
 bg_ma <- ggdraw(p) +
   theme(
     plot.margin = margin(t = 3, r = 10, b = 3, l = 10), 
     plot.background = element_rect(color = "black", linewidth = 2, fill = "white") 
   )
 
+a + b + c + plot_annotation(tag_levels = "A", tag_suffix = ")")  + 
+  plot_layout(guides = "collect") & theme(legend.position = "right")
+
 ggsave(file = paste0(loc.fig, "spatial_correlation_bg_ma_Spain.png"), 
        units = "cm", height = 10, width = 20, bg = "white")
+
+# Global average
+df <- rbind(spatial_corr[["2020"]], spatial_corr[["2021"]], spatial_corr[["2022"]])
+
+df <- df %>%
+  group_by(municipality, id) %>%
+  summarise(rho = mean(rho, na.rm = TRUE))
+df <- merge(df, spain, by = c("municipality", "id"))
+st_geometry(df) <- "geometry"
+
+margin_val <- margin(5, 5, 5, 5)  # top, right, bottom, left
+a <- ggplot() +
+  geom_sf(data = df, aes(fill = rho), color = "transparent", size = 1) +
+  scale_fill_distiller("Spearman's rank\ncorrelation (S)\n", palette = "Spectral", limits = c(0.7, 1)) + 
+  theme_classic(base_size = 8, base_family = "Helvetica") +
+  coord_sf(expand = FALSE) +
+  labs (x = "Longitude\n", y = "Latitude\n") +
+  theme(plot.margin = margin_val)
+print(mean(df$rho, na.rm = TRUE))
+print(sd(df$rho, na.rm = TRUE))
+
+df <- rbind(spatial_corr[["2020"]], spatial_corr[["2021"]], spatial_corr[["2022"]])
+
+df <- df %>%
+  group_by(municipality, id) %>%
+  summarise(rho_mean = mean(rho, na.rm = TRUE),
+            rho_sd =  sd(rho, na.rm = TRUE),
+            rho_se = rho_sd/sqrt(3)) %>%
+  arrange(desc(rho_mean)) %>%
+  ungroup()
+df$id = 1:8123
+
+b <- ggplot(df, aes(y = rho_mean, x = id)) +
+  geom_point(alpha = 0.4, size = 0.1, color = "#3288bd") +
+  geom_ribbon(aes(ymin = (rho_mean - rho_se), ymax = (rho_mean + rho_se)), alpha = 0.2) +
+  labs (x = "# Municipality", y = "Spearman's rank correlation (S)") +
+  theme_classic(base_size = 8, base_family = "Helvetica") +
+  theme(plot.margin = margin_val)
+
+par(mar = c(0, 0, 0, 0))
+a + b + plot_annotation(tag_levels = "a", tag_suffix = "") &
+  theme(plot.tag = element_text(face = 'bold'))
+
+
+ggsave(file = paste0(loc.fig, "global_spatial_correlation_bg_ma_Spain.pdf"), 
+       width = 18, height = 14, dpi = 600, units = "cm", device = cairo_pdf)
+
 
 # Plotting temporal correlations -----------------------------------------------
 years <- c("2020", "2021", "2022")
@@ -405,8 +453,25 @@ ggplot(cor_predictions, aes(x = month, y = value, color = comparison, shape = co
     linetype = guide_legend(title = "Comparison")
   )
 
-ggsave(file = paste0(loc.fig, "temporal_correlation_Spain.png"), 
-       units = "cm", height = 20, width = 35, bg = "white")
+# Only bg vs ma
+
+cor_predictions <- cor_predictions %>% filter(comparison == "count_ma")
+
+ggplot(cor_predictions, aes(x = month, y = value)) +
+  geom_point(size = 4, alpha = 0.6, color = "#3288bd") +
+  geom_line(size = 1, alpha = 0.6, color = "#3288bd") +
+  geom_hline(yintercept = mean(cor_predictions$value), linetype = "dashed") +
+  labs(
+    y = "Spearman's rank Correlation (S)",
+    x = "Month"
+  ) +
+  scale_x_continuous(breaks = seq(1, 12, 1)) +
+  scale_y_continuous(breaks = seq(-0.5, 0.9, 0.2)) +
+  theme_classic(base_size = 8, base_family = "Helvetica") +
+  facet_wrap(~year) 
+
+ggsave(file = paste0(loc.fig, "temporal_correlation_Spain.pdf"), 
+       width = 18, height = 12, dpi = 300, units = "cm", device = cairo_pdf)
 
 # Plotting Spearman correlation against abundances
 tiger <- readRDS(file = paste0(loc.output, "tiger_integrating_daily.rds")) %>%

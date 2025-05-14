@@ -22,8 +22,9 @@ loc.era5 <- "/home/catuxa/Documents/Mosquito_Models/EU_Culex/ERA5_Download/"
 
 sf::sf_use_s2(FALSE)
 
-mdl_name <- "/tiger_inte"
-fldr <- "Monthly_Integration"
+mdl <- "mtiger16"
+mdl_name <- "/mtiger16"
+fldr <- "Counts"
 sub <- "" # with _
 
 # Checking the daily predictions -----------------------------------------------
@@ -62,11 +63,11 @@ bg <- ggplot(df, aes(x = as.numeric(m), y = bg_avrg, color = year)) +
   geom_ribbon(aes(ymin = (bg_avrg - bg_se), ymax = (bg_avrg + bg_se), fill = year), alpha = 0.2, color = NA) +
   geom_line(aes(x = as.numeric(m), y = bg_avrg, color = year)) +
   labs(
-    y = "Monthly avg. of predicted \ncounts (Count model)",
+    y = "Monthly avg. of predicted \ncounts (COUNT model)",
     x = "Month"
   ) +
   scale_x_continuous(breaks=seq(1, 12, 1)) +
-  theme_classic() 
+  theme_classic(base_size = 8, base_family = "Helvetica") 
 all$bg <- df$bg_avrg
 
 suitability <- ggplot(df, aes(x = as.numeric(m), y = bg_avrg, color = year)) +
@@ -74,7 +75,7 @@ suitability <- ggplot(df, aes(x = as.numeric(m), y = bg_avrg, color = year)) +
   geom_ribbon(aes(ymin = (bg_avrg - bg_se), ymax = (bg_avrg + bg_se), fill = year), alpha = 0.2, color = NA) +
   geom_line() +
   labs(
-    y = "Monthly avg. of predicted \nsuitability (Suitability model)",
+    y = "Monthly avg. of predicted \nsuitability (Suitability model)\n",
     x = "Month"
   ) +
   scale_x_continuous(breaks=seq(1, 12, 1)) +
@@ -86,11 +87,11 @@ ma <- ggplot(df, aes(x = as.numeric(m), y = bg_avrg, color = year)) +
   geom_ribbon(aes(ymin = (bg_avrg - bg_se), ymax = (bg_avrg + bg_se), fill = year), alpha = 0.2, color = NA) +
   geom_line() +
   labs(
-    y = "Monthly avg. of predicted \nMA probability (MA model)",
+    y = "Monthly avg. of predicted MA\nprobability (CITSCI model)\n",
     x = "Month"
   ) +
   scale_x_continuous(breaks=seq(1, 12, 1)) +
-  theme_classic() 
+  theme_classic(base_size = 8, base_family = "Helvetica") 
 all$ma <- df$bg_avrg
 
 bites <- ggplot(df, aes(x = as.numeric(m), y = bg_avrg, color = year)) +
@@ -105,13 +106,30 @@ bites <- ggplot(df, aes(x = as.numeric(m), y = bg_avrg, color = year)) +
   theme_classic() 
 all$bites <- df$bg_avrg
 
-ggpubr::ggarrange(suitability, bg, ma, nrow = 3, ncol = 1, common.legend = TRUE)
-ggsave(file = paste0(loc.fig, "predicted_values_suit_bg_ma_temporal_plot_Spain.png"), 
-       units = "cm", height = 20, width = 15, bg = "white")
+# ggpubr::ggarrange(suitability, bg, ma, nrow = 3, ncol = 1, common.legend = TRUE)
 
-# ggpubr::ggarrange(suitability_1, suitability, nrow = 2, ncol = 1)
-# ggsave(file = paste0(loc.fig, "suitability_SE.png"), 
-#        units = "cm", height = 25, width = 25)
+ggpubr::ggarrange(
+  ggpubr::ggarrange(
+    bg, ma, ncol = 1, nrow = 2,  legend = "none", labels = c("a", "d"),
+    widths = 2
+  ),
+  ggpubr::ggarrange(
+    ggpubr::ggarrange(
+      a4, a11, common.legend = TRUE, legend = "right", labels = c("b", "c"),
+      widths = c(1, 1)
+    ), 
+    ggpubr::ggarrange(
+      a4_2, a11_2, common.legend = TRUE, legend = "right", labels = c("e", "f"),
+      widths = c(1, 1)
+    ), nrow = 2
+  ),
+  heights = c(1, 1.3),
+  widths = c(1, 1.3),
+  align = "hv"
+)
+
+ggsave(file = paste0(loc.fig, "predicted_values_bg_ma_temporal_plot_Spain.pdf"), 
+       width = 18, height = 12, dpi = 600, units = "cm", device = cairo_pdf)
 
 a <- ggplot(all, aes(x = ma, y = bg, color = year)) +
   geom_point() +

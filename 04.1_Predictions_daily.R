@@ -25,10 +25,10 @@ loc.era5 <- paste0(getwd(), "/EU_Culex/ERA5_Download/")
 
 sf::sf_use_s2(FALSE)
 
-mdl <- "mtiger18.rds"
-mdl_name <- "/mtiger18"
-fldr <- "Counts"
-sub <- "" # with _
+mdl <- "mtiger7_ma_random.rds"
+mdl_name <- "/mtiger7_random"
+fldr <- "MA"
+sub <- "_ma" # with _
 
 # Obtaining centroids from municipalities --------------------------------------
 spain <- readRDS(paste0(loc.output, "spain_mun.rds")) %>%

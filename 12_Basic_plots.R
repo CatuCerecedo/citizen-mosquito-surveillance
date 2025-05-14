@@ -25,9 +25,9 @@ spain <- readRDS(paste0(loc.output, "spain_mun.rds")) %>%
   )
 
 # Plot of samples location (traps and reports) ---------------------------------
-tiger <- readRDS(paste0(loc.output, "bg_tiger_spain_daily.rds")) 
+tiger <- readRDS(paste0(loc.output, "bg_tiger_spain_daily.rds")) %>%
   # filter(females > 0) %>%
-  dplyr::select(id, municipality, prov_name) %>%
+  dplyr::select(id, municipality, prov_name, females) %>%
   distinct()
 tiger <- merge(tiger, spain, by = c("id", "municipality", "prov_name"))
 st_geometry(tiger) <- "geometry"
@@ -79,7 +79,7 @@ merged_df <- full_join(tiger, ma_df, by = c("y", "m")) %>%
     method = case_when(
       !is.na(method.x) & !is.na(method.y) ~ "BOTH", 
       !is.na(method.x) ~ "TRAPS",  
-      !is.na(method.y) ~ "CITSI"  
+      !is.na(method.y) ~ "CITSCI"  
     )
   ) %>%
   dplyr::select(y, m, method) %>%
@@ -87,20 +87,20 @@ merged_df <- full_join(tiger, ma_df, by = c("y", "m")) %>%
 
 ggplot(merged_df, aes(x = factor(m), y = factor(y), fill = method)) +
   geom_tile(color = "white") +
-  scale_fill_manual(values = c("CITSI" = "#d53e4f", "TRAPS" = "#abdda4", "BOTH" = "#3288bd")) +
+  scale_fill_manual(values = c("CITSCI" = "#d53e4f", "TRAPS" = "#abdda4", "BOTH" = "#3288bd")) +
   labs(x = "Months",
        y = "Year",
        fill = "Surveillance") +
-  theme_classic() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  theme_classic(base_size = 8, base_family = "Helvetica")
 
-ggsave(paste0(loc.fig, "temporal_coverage_samples.png"),
-       width = 20,  height = 10, units = "cm")
+ggsave(paste0(loc.fig, "temporal_coverage_samples.pdf"),
+       width = 8, height = 5, dpi = 600, units = "cm", device = cairo_pdf)
 
 
 # Plotting weather variables with raw data -------------------------------------
 # Count data
-tiger <- readRDS(paste0(loc.output, "bg_tiger_spain_daily.rds"))
+tiger <- readRDS(paste0(loc.output, "bg_tiger_spain_daily.rds")) %>% 
+  filter(y != "2023")
 
 # Mosquito Alert data
 ma_df <- readRDS(paste0(loc.output, "ma_tiger_spain_daily.rds")) %>%
@@ -128,7 +128,10 @@ ma_df <- ma_df %>% dplyr::select(any_reps, id, y, municipality, min_temperature,
   ) %>% 
   dplyr::select(-any_reps)
 combine <- bind_rows(tiger, ma_df) %>%
-  filter(presence == 1)
+  # filter(presence == 1) %>%
+  mutate(
+    presence = as.factor(presence)
+  )
 
 climate_vars <- c("min_temperature", "max_temperature", "mean_temperature", 
                   "precipitation", "mean_relative_humidity")
@@ -136,7 +139,32 @@ climate_vars <- c("min_temperature", "max_temperature", "mean_temperature",
 combine_long <- combine %>%
   pivot_longer(cols = c("min_temperature", "max_temperature", "mean_temperature", 
                         "precipitation", "mean_relative_humidity"), 
-               names_to = "climate_var", values_to = "value") 
+               names_to = "climate_var", values_to = "value") %>%
+  drop_na() %>%
+  mutate(
+    Presence = ifelse(presence == "1", TRUE, FALSE)
+  )
+
+summary_table <- combine_long %>% 
+  filter(climate_var %in% c("mean_temperature", "mean_relative_humidity")) %>%
+  mutate(
+    Variables = ifelse(climate_var == "mean_temperature", "Mean Temperature (ºC)", "Mean Relative Humidity (%)") 
+  ) %>%
+  rename("Method" = "method") %>%
+  group_by(Variables, Presence, Method) %>%
+  summarise(
+    Min = round(min(value, na.rm = TRUE), 2),
+    `1st Qu` = round(quantile(value, na.rm = TRUE)[["25%"]], 2), 
+    Median = round(median(value, na.rm = TRUE), 2),
+    Mean = round(mean(value, na.rm = TRUE), 2),
+    `3st Qu` = round(quantile(value, na.rm = TRUE)[["75%"]], 2), 
+    Max = round(max(value, na.rm = TRUE), 2)
+  )
+table_plot <- ggpubr::ggtexttable(summary_table, rows = NULL, theme = ggpubr::ttheme("light", base_size = 8))
+
+combine_long <- combine_long %>% 
+  filter(climate_var %in% c("mean_temperature", "mean_relative_humidity")) 
+
 custom_labels <- c(
   min_temperature = "Minimum Temperature (ºC)",
   max_temperature = "Maximum Temperature (ºC)",
@@ -144,28 +172,28 @@ custom_labels <- c(
   precipitation = "Precipitation (m)",
   mean_relative_humidity = "Mean Relative Humidity (%)"
 )
-
-ggplot(combine_long, aes(x = value, y = method, fill = method)) +
-  scale_fill_manual(values = c("COUNT" = "#abdda4", "CITSI" = "#d53e4f")) +
-  ggridges::geom_density_ridges(alpha = 0.5, scale = 1.2, rel_min_height = 0.01) +  
+  
+comb_plot <- ggplot(combine_long %>% filter(climate_var %in% c("mean_temperature", "mean_relative_humidity")),
+       aes(x = value, y = method, fill = Presence)) +
+  scale_fill_manual(values = c("TRUE" = "#abdda4","FALSE" = "#d53e4f")) +
+  ggridges::geom_density_ridges(alpha = 0.7, scale = 1.2, rel_min_height = 0.01) +  
   geom_vline(data = combine_long %>% 
                group_by(climate_var) %>% 
                summarise(mean_val = mean(value, na.rm = TRUE)), 
              aes(xintercept = mean_val), linetype = "dashed", size = 1) +
   facet_wrap(~climate_var, scales = "free_x",
              labeller = as_labeller(custom_labels)) +  
-  theme_classic() +
   labs(
-    x = "\nClimatic Variables",
+    x = "\nWeather Variables",
     y = "Method\n"
   ) +
-  theme(
-    strip.text = element_text(face = "bold"),
-    axis.text = element_text(size = 13),
-    axis.title = element_text(size = 14, face = "bold")
-  )
-ggsave(file = paste0(loc.fig, "Spatial_clusters/glm/weather_dist_raw_data.png"), 
-       units = "cm", height = 20, width = 35, bg = "white")
+  theme_classic(base_size = 8, base_family = "Helvetica") 
+
+ggpubr::ggarrange(comb_plot, table_plot, nrow = 2, ncol = 1,
+                  labels = list("a", "b"))
+
+ggsave(file = paste0(loc.fig, "Spatial_clusters/glm/weather_dist_raw_data.pdf"), 
+       width = 18, height = 12, dpi = 300, units = "cm", device = cairo_pdf)
 
 # Plotting spatial correlation along variables ---------------------------------
 # Yearly correlations between BG and MA
@@ -338,6 +366,11 @@ ggsave(paste0(loc.fig, "Spatial_clusters/glm/weather_suring_secorrelation.png"),
 # Las zonas más humedas en España son las costas, espeialmente, en el norte de la península.
 months = c("01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12")
 years = c("2020", "2021", "2022")
+diff_pred <- readRDS(file = paste0(loc.output, "diff_pred_ranked.rds")) %>%
+  dplyr::select(id, pred_rnk_diff)
+
+wth <- readRDS(paste0(loc.output, "monthly_weather_data/prep_", 
+                      "01", "-", "2021", ".rds"))
 
 wth_plot <- list()
 for (y in 1:3){
@@ -358,17 +391,28 @@ for (y in 1:3){
     ) %>% 
     dplyr::select(id, mean_relative_humidity, mean_temperature)
   
-  wth_plot[[y]] <- ggplot(wth_year, aes(y = mean_relative_humidity, x = mean_temperature)) +
-    geom_point() +
+  wth_year <- merge(wth_year, diff_pred, by = "id", all.x = TRUE)
+  
+  wth_plot[[y]] <- ggplot(wth_year, aes(y = mean_relative_humidity, x = mean_temperature, color = pred_rnk_diff)) +
+    geom_point(size = 0.6) +
+    scale_color_distiller("CITSCI - COUNT\n(ranked)", palette = "Spectral", na.value = "transparent") + 
     geom_smooth(method = "lm") +
-    theme_classic() +
+    theme_classic(base_size = 8, base_family = "Helvetica") +
     labs(
-      x = "Mean Temperature (ºC)",
-      y = "Mean Relative Humidity (%)"
+      x = "Annual Mean Temperature (ºC)",
+      y = "Annual Mean Relative Humidity (%)"
+    ) +
+    theme(
+      legend.title = element_text(size = 8)
     )
 }
-wth_plot[[1]] +  wth_plot[[2]] + wth_plot[[3]] +
-  plot_annotation(tag_levels = "A", tag_suffix = ")")
+# wth_plot[[1]] +  wth_plot[[2]] + wth_plot[[3]] +
+#   plot_annotation(tag_levels = "A", tag_suffix = ")") &
+#   theme(legend.position = "right")
 
-ggsave(paste0(loc.fig, "Spatial_clusters/glm/annual_temp_vs_humidity.png"),
-       width = 25,  height = 10, units = "cm")
+ggpubr::ggarrange(wth_plot[[1]], wth_plot[[2]], wth_plot[[3]], nrow = 1, ncol = 3, 
+                  common.legend = TRUE, legend = "right",
+                  labels = list("a", "b", "c"))
+
+ggsave(paste0(loc.fig, "Spatial_clusters/glm/annual_temp_vs_humidity.pdf"),
+       width = 18, height = 7, dpi = 300, units = "cm", device = cairo_pdf)

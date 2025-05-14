@@ -9,6 +9,7 @@ library(brms)
 library(janitor)
 library(cmdstanr)
 library(rstanarm)
+library(terra)
 
 rm(list = ls())
 # Directories ------------------------------------------------------------------
@@ -51,13 +52,7 @@ tiger <- readRDS(paste0(loc.output, "bg_tiger_spain_daily.rds")) %>%
     year = year(end_date),
     month = month(end_date)
   ) 
-# %>%
-#   group_by(id, year, month) %>%
-#   summarise(
-#     females = sum(females, na.rm = TRUE),
-#     l21precipitation = mean(l21precipitation, na.rm = TRUE),
-#     trapping_effort = mean(trapping_effort, na.rm = TRUE)
-#   )
+
 
 # Creating a monthly average of MA:
 months = c("01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12")
@@ -148,7 +143,7 @@ threads_per_chain = 1
 iteret = 5000
 wup = 2000
 
-mtiger_inte <- brm(females ~ poly(l21mean_temperature, 2) + l21precipitation  + ma + 
+mtiger_inte <- brm(females ~ ma + 
                   offset(log(trapping_effort)) +
                   (1 | id) + (1 | year),
                 data = integrated_data,
@@ -314,13 +309,71 @@ for (year in c("2020", "2021", "2022")){
   } # months
 } # years
 
+## Cross-validation ------------------------------------------------------------
+# Split the data: train/test 
+set.seed(121234)
+sample <- sample(c(TRUE, FALSE), nrow(integrated_data), replace=TRUE, prob=c(0.7, 0.3))
+train  <- integrated_data[sample, ]
+test   <- integrated_data[!sample, ]
+
+nchains = 4
+threads_per_chain = 1
+iteret = 5000
+wup = 2000
+
+mtiger_inte <- brm(females ~ ma + 
+                           offset(log(trapping_effort)) +
+                           (1 | id) + (1 | year),
+                         data = train,
+                         prior = set_prior("cauchy(0,2.5)", class="b"),
+                         family = negbinomial(link = "log"),
+                         iter = iteret,
+                         chains = nchains,
+                         cores = nchains,
+                         backend = "cmdstanr",
+                         save_pars = save_pars(all = TRUE),
+                         threads = threading(threads_per_chain),
+                         control = list(adapt_delta = 0.999))
+summary(mtiger_inte)
+# loo(mtiger_inte_month)
+# loo(mtiger_inte_month, moment_match = TRUE, recompile = TRUE, reloo = TRUE)
+bayes_R2(mtiger_inte)
+
+# Predictions: 
+pp <- apply(posterior_predict(mtiger_inte, 
+                              newdata = test,
+                              allow_new_levels = TRUE, 
+                              # re_formula = NA,
+                              ndraws = 1000), 
+            2, function(x) mean(x)) %>%
+  as.data.frame()
+
+test$predicted <- pp$.
+
+ggplot(test, aes(x = predicted, y = females)) +
+  geom_point() +
+  # annotate("text", x = 110, y = 500, label = "y = -6.13 + 1.42x") +
+  # annotate("text", x = 110, y = 400, label = "S = 0.63") +
+  geom_smooth(method = "lm") +
+  theme_bw() 
+summary(lm(females ~ predicted, data = test))
+summary(lm(I(females - 1) ~ predicted - 1, data = test))
+
+library(caret)
+cv_metrics <- data.frame(Scor = cor(test$predicted, test$females, method = "spearman"),
+                         Pcor = cor(test$predicted, test$females, method = "pearson"),
+                         R2 = R2(test$predicted, test$females),
+                         RMSE = RMSE(test$predicted, test$females),
+                         MAE = MAE(test$predicted, test$females),
+                         model = "INTEGRATED model")
+cv_metrics
+
 # Working at monthly scale -----------------------------------------------------
 ## Integrating data ------------------------------------------------------------
 spain <- readRDS(paste0(loc.output, "spain_mun.rds")) %>%
   mutate(
     municipality = if_else(is.na(municipality), "no_name", municipality)
   )
-
 
 # Creating a monthly average of MA:
 months = c("01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12")
@@ -380,7 +433,6 @@ tiger <- readRDS(paste0(loc.output, "bg_tiger_spain_daily.rds")) %>%
 
 # Adding precipitation values (using information from predictions tables
 loc.era5 <- paste0("/home/catuxa/Documents/Mosquito_Models/EU_Culex/ERA5_Download/")
-library(terra)
 
 tiger <- st_as_sf(tiger, coords = c("longitude", "latitude"), crs = 4326, remove = FALSE)
 weather_data <- parallel::mclapply(1:nrow(tiger), function(i){
@@ -412,7 +464,7 @@ weather_data <- parallel::mclapply(1:nrow(tiger), function(i){
 tiger_integrated <- do.call(rbind, weather_data)
 tiger_integrated <- st_drop_geometry(tiger_integrated)
 
-saveRDS(tiger_integrated, paste0(loc.output, "tiger_integrated_monthly.rds"))
+# saveRDS(tiger_integrated, paste0(loc.output, "tiger_integrated_monthly.rds"))
 
 ## Modeling process ------------------------------------------------------------
 tiger_integrated <- readRDS(paste0(loc.output, "tiger_integrated_monthly.rds"))
@@ -491,17 +543,13 @@ for (y in c("2020", "2021", "2022")){
     
     print("Calculating variables done")
     
-    # Function to predict daily data -----------------------------------------------
+    # Function to predict monthly data 
     
     data_prep_day <- data_prep_day %>% 
       mutate(
         attractor = "CO2",
-        n_traps = 1,
-        n_days = 7,
-        SE = 1,
-        n_total_reporters = 1,
-        n_total_reports = 1,
-        trapping_effort = 7
+        n_traps = 2,
+        n_days = 14
         # min_temperature = scale(min_temperature),
         # agricultural = scale(agricultural),
         # forests_scrub = scale(forests_scrub)
@@ -561,16 +609,15 @@ for (y in c("2020", "2021", "2022")){
     
     print(paste("Saving pred: ", m))
     saveRDS(pred_points %>% st_drop_geometry(), file = paste0(loc.output, "PREDICTIONS/", fldr, mdl_name,
-                                                              "/tiger_", m, "_", y,  sub, ".rds"))
+                                                              "/tiger_", m, "_", y,  sub, "2_traps_14_days.rds"))
     
     print(paste("Saving pred sd: ", m))
     saveRDS(pred_points_sd %>% st_drop_geometry(), file = paste0(loc.output, "PREDICTIONS/", fldr, mdl_name,
-                                                                 "/tiger_", m, "_", y, sub, "_sd.rds"))
+                                                                 "/tiger_", m, "_", y, sub, "_sd_2_traps_14_days.rds"))
   } # months
 } # years
 
 ## Mapping_predictions ---------------------------------------------------------
-# Plot preidctions: raster/tif -------------------------------------------------
 
 years <- c("2020", "2021", "2022")
 months <- c("01", "02", "03", "04", "05", "06" ,"07", "08", "09", "10", "11", "12")
@@ -584,7 +631,7 @@ for(y in years){
     print(paste0("Plotting: ", m, "-", y))
     iter <- iter + 1
     
-    pred <- readRDS(paste0(loc.output, "PREDICTIONS/", fldr, mdl_name, "/tiger_", m ,"_", y, sub, ".rds")) %>%
+    pred <- readRDS(paste0(loc.output, "PREDICTIONS/", fldr, mdl_name, "/tiger_", m ,"_", y, sub, "2_traps_14_days.rds")) %>%
       janitor::clean_names() %>%
       st_drop_geometry()
     
@@ -664,3 +711,61 @@ ggsave(paste0(loc.fig, "monthly_tiger_2022_", mdl, ".png"), units = "cm", bg = "
 
 rm(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12)
 
+## Cross-validation ------------------------------------------------------------
+# Split the data: train/test 
+set.seed(121234)
+sample <- sample(c(TRUE, FALSE), nrow(tiger_integrated), replace=TRUE, prob=c(0.7, 0.3))
+train  <- tiger_integrated[sample, ]
+test   <- tiger_integrated[!sample, ]
+
+nchains = 4
+threads_per_chain = 1
+iteret = 5000
+wup = 2000
+
+mtiger_inte_month <- brm(females ~ ma + 
+                           offset(log(n_traps)) + offset(log(n_days)) + 
+                           (1 | id) + (1 | year),
+                         data = train,
+                         prior = set_prior("cauchy(0,2.5)", class="b"),
+                         family = negbinomial(link = "log"),
+                         iter = iteret,
+                         chains = nchains,
+                         cores = nchains,
+                         backend = "cmdstanr",
+                         save_pars = save_pars(all = TRUE),
+                         threads = threading(threads_per_chain),
+                         control = list(adapt_delta = 0.999))
+summary(mtiger_inte_month)
+# loo(mtiger_inte_month)
+# loo(mtiger_inte_month, moment_match = TRUE, recompile = TRUE, reloo = TRUE)
+bayes_R2(mtiger_inte_month)
+
+# Predictions: 
+pp <- apply(posterior_predict(mtiger_inte_month, 
+                              newdata = test,
+                              allow_new_levels = TRUE, 
+                              # re_formula = NA,
+                              ndraws = 1000), 
+            2, function(x) mean(x)) %>%
+  as.data.frame()
+
+test$predicted <- pp$.
+
+ggplot(test, aes(x = predicted, y = females)) +
+  geom_point() +
+  # annotate("text", x = 110, y = 500, label = "y = -6.13 + 1.42x") +
+  # annotate("text", x = 110, y = 400, label = "S = 0.63") +
+  geom_smooth(method = "lm") +
+  theme_bw() 
+summary(lm(females ~ predicted, data = test))
+summary(lm(I(females - 1) ~ predicted - 1, data = test))
+
+library(caret)
+cv_metrics <- data.frame(Scor = cor(test$predicted, test$females, method = "spearman"),
+                         Pcor = cor(test$predicted, test$females, method = "pearson"),
+                         R2 = R2(test$predicted, test$females),
+                         RMSE = RMSE(test$predicted, test$females),
+                         MAE = MAE(test$predicted, test$females),
+                         model = "INTEGRATED model")
+cv_metrics
