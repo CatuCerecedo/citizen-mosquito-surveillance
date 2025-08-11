@@ -1,5 +1,10 @@
 ############################## TRAP AND CITSCI PREDICTIONS #####################
+#' Daily predictions of TRAP and CITSCI models
+#' 
+#' The script contains extraction nc files download directly from ERA5 dataset
+#' and calculation functions of covariates, and Bayesian prediction (using brms library)
 
+################################################################################
 library(tidyverse)
 library(sf)
 library(parallel)
@@ -15,7 +20,7 @@ sf::sf_use_s2(FALSE)
 # Directories ------------------------------------------------------------------
 loc.output <- paste0(getwd(), "/OUTPUT/")
 loc.data <- paste0(getwd(), "/DATA/")
-loc.era5 <- paste0("/home/catuxa/Documents/Mosquito_Models/EU_Culex/ERA5_Download/")
+loc.era5 <- paste0(getwd(), "/ERA5_Download/") # Directory where ERA5 nc files are stores (one file per month)
 
 # Obtaining centroids from municipalities --------------------------------------
 spain <- readRDS(paste0(loc.data, "spain_mun.rds")) %>%
@@ -62,7 +67,7 @@ recalculate_variables = FALSE
 
 for (year in c("2020", "2021", "2022")){
   # set path and file name
-  ncname <- paste0(loc.era5, "ERA5_EU_hourly_", year)
+  ncname <- paste0(loc.era5, "ERA5_ES_hourly_", year) 
   ncfname <- paste(ncname, ".nc", sep="")
   
   months <- c("01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12")
@@ -217,7 +222,6 @@ for (year in c("2020", "2021", "2022")){
             mutate(
               mean_relative_humidity = 100*10^(7.59138*( (dew_point/(dew_point + 240.726))  - (mean_temperature/(mean_temperature+240.726)) )),
               trapping_effort = 1,
-              attractor = "CO2",
               n_traps = 1,
               date = sel_date
             ) %>%
