@@ -49,10 +49,10 @@ clc_surface <- readRDS(paste0(loc.output, "clc_surface_mun_level_0.rds"))
 # fldr <- "COUNTS"
 # sub <- "_trap" # with _
 
-mdl <- "mtiger7_ma.rds"
+mdl <- "mtiger7_citsci.rds"
 mdl_name <- "/mtiger7"
-fldr <- "MA"
-sub <- "_ma"
+fldr <- "CITSCI"
+sub <- "_citsci"
 
 # NC to raster and extraction --------------------------------------------------
 ncores = 8
