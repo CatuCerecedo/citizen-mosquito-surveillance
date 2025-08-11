@@ -35,19 +35,14 @@ sub_ma <- "_citsci"
 months = c("01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12")
 years = c("2020", "2021", "2022")
 
-# Load files -------------------------------------------------------------------
-spain <- readRDS(paste0(loc.output, "spain_mun.rds")) %>%
-  mutate(
-    municipality = if_else(is.na(municipality), "no_name", municipality)
-  )
-
-# Function for rank transformation
+# Function for rank transformation ---------------------------------------------
 rank_order_conversion <- function(vctr) {
   rank = rank(vctr, na.last = "keep", ties.method = "first")       
   rank_normalized = rank / max(rank, na.rm = TRUE) 
   return(rank_normalized)
 }
 
+# Rank transformation ----------------------------------------------------------
 pred_all <- data.frame()
 for(y in years){
   
@@ -135,7 +130,7 @@ pred_all_ma$counts <-  NULL
 
 diff_table <- merge(pred_all_ma, pred_all, by = names(pred_all)[1:7])
 colnames(diff_table) <- c(names(pred_all)[1:7], "ma_rank", "model_rank")
-diff_table$diff <- diff_table$ma_rank - diff_table$model_rank # 292428
+diff_table$diff <- diff_table$ma_rank - diff_table$model_rank
 
 c_table <- merge(pred_all_ma_c, pred_all_c, by = names(pred_all_c)[c(1:6,8)])
 colnames(c_table) <- c(names(pred_all_c)[c(1:6,8)], "ma", "model")
@@ -148,6 +143,72 @@ ggplot(c_table) +
     x = paste("Predictions", fldr),
     y = paste("Predictions Citizen Science")
   )
+
+# Ploting decorrelations maps --------------------------------------------------
+spain <- readRDS(paste0(loc.output, "spain_mun.rds")) %>%
+  mutate(
+    municipality = if_else(is.na(municipality), "no_name", municipality)
+  )
+
+diff_rank_plot <- ggplot() +
+  geom_sf(data = diff_table, aes(fill = diff), color = "transparent",
+          size = 0.01, alpha = 0.8, na.rm = TRUE) +
+  scale_fill_distiller("Diff. ranked\npredictions\n", palette = "Spectral", na.value = "transparent", limits = c(-1, 1)) + 
+  ggtitle("CITSCI - TRAP") +
+  theme_void(base_size = 8, base_family = "Helvetica") 
+
+# Fig. 3
+cor_predictions <- readRDS(file = paste0(loc.output, "temporal_corr.rds"))
+cor_predictions <- cor_predictions %>% filter(comparison == "count_ma")
+
+cor_plot <- ggplot(cor_predictions, aes(x = month, y = value)) +
+  geom_point(size = 4, alpha = 0.6, color = "#653496") +
+  geom_line(size = 1, alpha = 0.6, color = "#653496") +
+  geom_hline(yintercept = mean(cor_predictions$value), linetype = "dashed") +
+  labs(
+    y = "Spearman's rank Correlation (S)",
+    x = "Month"
+  ) +
+  scale_x_continuous(breaks = seq(1, 12, 1)) +
+  scale_y_continuous(breaks = seq(-0.5, 0.9, 0.2)) +
+  theme_classic(base_size = 12, base_family = "Helvetica") +
+  facet_wrap(~year) 
+
+maps1 <- (c / d) + plot_layout(guides = 'collect') & theme(legend.position = "right") +
+  theme(
+    panel.background = element_rect(fill = NA, color = NA),
+    plot.background = element_rect(fill = NA, color = NA),
+    legend.background = element_rect(fill = NA, color = NA)
+  ) 
+
+maps2 <- (maps1 | diff_rank_plot)  + 
+  theme(
+    panel.background = element_rect(fill = NA, color = NA),
+    plot.background = element_rect(fill = NA, color = NA),
+    legend.background = element_rect(fill = NA, color = NA)
+  )
+
+ggdraw() +
+  draw_plot(cor_plot) +
+  draw_plot(maps2, x = 0.26, y = 0, width = 0.55, height = 0.55) +
+  draw_grob(
+    grid::roundrectGrob(
+      x = unit(0.27 + 0.55 / 2, "npc"),  
+      y = unit(0 + 0.55 / 2, "npc"),    
+      width = unit(0.53, "npc"),         
+      height = unit(0.38, "npc"),        
+      r = unit(0.05, "snpc"),             
+      gp = gpar(fill = NA, col = "black", lwd = 2)
+    )
+  ) + draw_plot_label(
+    label = c("a", "b"),
+    x = c(0, 0.29), 
+    y = c(1, 0.46), 
+    size = 12
+  )
+
+ggsave(file = paste0(loc.fig, "Fig_3.pdf"), 
+       width = 25, height = 18, dpi = 600, units = "cm", device = cairo_pdf)
 
 # calculate the weather variables-----------------------------------------------
 diff_table_wth <- data.frame()
@@ -242,4 +303,6 @@ b <-  ggplot(me, aes(x = x, y = predicted)) +
 
 a + b +
   plot_annotation(tag_levels = c("a"), tag_suffix = "") 
+
+
 
