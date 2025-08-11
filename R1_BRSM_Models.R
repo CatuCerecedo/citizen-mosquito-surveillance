@@ -7,14 +7,6 @@
 
 ################################################################################
 
-# Dependencies
-
-if (!require("tidyverse")) install.packages("tidyverse")
-if (!require("rstanarm")) install.packages("rstanarm")
-if (!require("brms")) install.packages("brms")
-if (!require("cmdstanr")) install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
-if (!require("loo")) install.packages("loo")
-
 library(tidyverse)
 library(rstanarm)
 library(brms)
@@ -33,7 +25,7 @@ loc.data <- paste0(getwd(), "/DATA/")
 
 # Loading data -----------------------------------------------------------------
 tiger <- readRDS(paste0(loc.data, "trap_surveillance_data.rds")) 
-ma_df <- readRDS(paste0(loc.data, "citizen_observations.rds")) 
+citsci <- readRDS(paste0(loc.data, "citizen_observations.rds")) 
 
 # Modeling process -------------------------------------------------------------
 # Parameters of brm models
@@ -44,7 +36,7 @@ wup = 2000
 
 mtiger16_trap <- brm(females ~ poly(l21mean_temperature, 2) + l21precipitation +
                   offset(log(trapping_effort)) +
-                  (1 | id) + (1 | y),
+                  (1 | id) + (1 | y), # id = municipality id; y = year
                 data = tiger,
                 prior = set_prior("cauchy(0,2.5)", class="b"),
                 family = negbinomial(link = "log"),
@@ -57,10 +49,10 @@ mtiger16_trap <- brm(females ~ poly(l21mean_temperature, 2) + l21precipitation +
                 control = list(adapt_delta = 0.999))
 saveRDS(mtiger16_trap, file = paste0(loc.output, "mtiger16_trap.rds"))
 
-mtiger7_ma <- brm(any_reps ~ poly(mean_temperature, 2) + mean_relative_humidity +
-                     (1 | id) + (1 | y) +
+mtiger7_citsci <- brm(any_reps ~ poly(mean_temperature, 2) + mean_relative_humidity +
+                     (1 | id) + (1 | y) + # id = municipality id; y = year
                      offset(log(SE)),
-                  data = ma_df,
+                  data = citsci,
                   prior = set_prior("cauchy(0,2.5)", class="b"),
                   family = bernoulli(link = "logit"),
                   iter = iteret,
@@ -71,17 +63,17 @@ mtiger7_ma <- brm(any_reps ~ poly(mean_temperature, 2) + mean_relative_humidity 
                   threads = threading(threads_per_chain),
                   save_pars = save_pars(all = TRUE),
                   control = list(adapt_delta = 0.99))
-saveRDS(mtiger7_ma, file = paste0(loc.output, "mtiger7_ma.rds"))
+saveRDS(mtiger7_citsci, file = paste0(loc.output, "mtiger7_citsci.rds"))
 
 # Visual check of models
 plot(mtiger16_trap) # Converge
-plot(mtiger7_ma) # Converge
+plot(mtiger7_citsci) # Converge
 
 # Other checks (Pareto and R2_bayes)
 loo(mtiger16_trap, moment_match = TRUE, recompile = TRUE, reloo = TRUE)
-loo(mtiger7_ma, moment_match = TRUE, recompile = TRUE, reloo = TRUE)
+loo(mtiger7_citsci, moment_match = TRUE, recompile = TRUE, reloo = TRUE)
 
 bayes_R2(mtiger16_trap)
-bayes_R2(mtiger7_ma)
+bayes_R2(mtiger7_citsci)
 
 
