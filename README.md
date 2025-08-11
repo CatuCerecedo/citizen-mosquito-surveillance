@@ -11,6 +11,14 @@ Frederic Bartumeus—Centre d'Estudis Avançats de Blanes (CEAB-CSIC), Blanes, S
 
 *Corresponding author: Catuxa Cerecedo-Iglesias
 
+**CONTENTS**
+
+This repository contains the scripts for the primary statistical analyses presented in the manuscript. In some cases, it also provides details on how the figures included in the manuscript were generated.
+
+The `DATA` directory contains cleaned datasets derived from both traditional sampling and citizen science observations, along with the covariates used to build the models. It also includes additional datasets related to land use and other spatial variables required for georeferencing the analyses and figures.
+
+Scripts are organized sequentially (from `R1` to `R6`) to reflect the workflow followed during the development of this study.
+
 **PREREQUISITES**
 - R version(4.4.2.)
 - Requieres R packages: `brms`, `tidyverse`, `rstanarm`, `loo`, `cmdstanr`, `tidyverse`, `sf`, `parallel`, `dplyr`, `data.table`, `terra`, `patchwork`, `ggplot2`, `cowplot`, `glmmTMB`, `DHARMa`, `MuMIn`, `caret`.
