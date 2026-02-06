@@ -12,7 +12,7 @@ Frederic Bartumeus—Centre d'Estudis Avançats de Blanes (CEAB-CSIC), Blanes, S
 
 **CONTENTS**
 
-This repository contains the scripts for the primary statistical analyses presented in the manuscript titled *Citizen Science Deepens the Ecological and Climatic Dimensions of Mosquito Surveillance* submitted on *Nature Ecology & Evolution*. In some cases, it also provides details on how the figures included in the manuscript were generated.
+This repository contains the scripts for the primary statistical analyses presented in the manuscript titled *Citizen Science Deepens the Ecological and Climatic Dimensions of Mosquito Surveillance* submitted on *Ecography*. In some cases, it also provides details on how the figures included in the manuscript were generated.
 
 The `DATA` directory contains cleaned datasets derived from both traditional sampling and citizen science observations, along with the covariates used to build the models. It also includes additional datasets related to land use and other spatial variables required for georeferencing the analyses and figures.
 
